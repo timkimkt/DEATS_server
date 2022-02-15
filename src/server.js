@@ -2,6 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
+
+// DB Setup
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost/cs52poll';
+
+mongoose.connect(mongoURI).then(() => {
+  console.log('connected to database:', mongoURI);
+}).catch((err) => {
+  console.log('error: could not connect to db:', err);
+});
 
 // initialize
 const app = express();
@@ -29,7 +39,7 @@ app.use(express.json()); // To parse the incoming requests with JSON payloads
 
 // default index route
 app.get('/', (req, res) => {
-  res.send('hi');
+  res.send('HELLO');
 });
 
 // START THE SERVER
