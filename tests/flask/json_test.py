@@ -6,7 +6,7 @@ from flask import request
 import os
 
 app_json = Flask(__name__)
-users = ['edmund', 'jeff', 'kathy', 'brian', 'tim']
+users = ['edmund', 'jeff', 'kathy', 'brian', 'tim', ]
 
 @app_json.route('/json/mywords/', methods=['POST'])
 def show_user_words():
@@ -24,6 +24,7 @@ def show_user_words():
 @app_json.route('/json/login', methods=['POST'])
 def login():
     data = request.get_json()
+    print("data", data)
     
     if data:
         if 'email' in data:
@@ -31,15 +32,19 @@ def login():
 
             if 'password' in data:
                 password = data['password']
-
+                
                 split_email = email.split('@')
-                if validate_user_creds(split_email, request.form['pass']):
+                print("split email", split_email)
+                if validate_user_creds(split_email, password):
+                    print("validated")
+                    print("password ending:", password[len(password)-3:])
                     return '''
                             User: {} exists
                             and
                             Password ending in ...{} was validated as correct
-                            '''.format(split_email[0], split_email[1][len(split_email[1])-3:])
+                            '''.format(split_email[0], password[len(password)-3:])
 
+                print("not validated")
                 return "Wrong email \n or \n password!"
 
             return "Error: JSON object has no password key"
