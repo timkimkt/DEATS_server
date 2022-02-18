@@ -1,1 +1,1 @@
-web: npm run prod
+web: gunicorn wsgi:app_json
