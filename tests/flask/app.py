@@ -1,37 +1,55 @@
 from flask import Flask
 from flask import request
-from flask import render_template
 
-from markupsafe import escape
+# from markupsafe import escape
 
 import os
+import pymongo
+
+DATABASE_URL = f'mongodb+srv://db:db@cluster0.ixijz.mongodb.net/?retryWrites=true&w=majority'
+
+client = pymongo.MongoClient(DATABASE_URL)
+db = client.test
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join('static')
-users = ['edmund', 'jeff', 'kathy', 'brian', 'tim']
 
-@app.route('/mywords/<path:words>')
-def show_user_words(words):
-    return f'{escape(words)}'
 
-@app.route('/', methods=['POST', 'GET'])
-@app.route('/login', methods=['POST', 'GET'])
+@app.route("/create_acc/", methods=['POST'])
+def create_account():
+    data = request.get_json()
+    print("data", data)
+    print(request.headers['Content-Type'])
+    result = db.users.insert_one(data)
+    return str(result.inserted_id)
+
+@app.route('/login/', methods=['POST'])
 def login():
-    error = ''
-    root_folder = app.config['UPLOAD_FOLDER']
-    if request.method == 'POST':
-        name = request.form['email'].split('@')[0]
-        if validate_user_creds(name,
-                       request.form['pass']):
-            return login_helper(name, root_folder)
-        else:
-            error = 'Wrong email \n or \n password!'
+    data = request.get_json()
+    print("data", data)
+    print(request.headers['Content-Type'])
+    
+    if data:
+        user = db.users.find_one({"email" : data["email"]})
+        print("email_check", user)          
+        if not user:
+            return "Failed. Fix email" 
 
-    return render_template('login.html', error=error, root_folder=root_folder)
+        user = db.users.find_one({"email" : data["email"], "password" : data["password"]})
+        print("password_check", user)
+        if not user:
+            return "Failed. Fix password"
 
-def validate_user_creds(name, password):
-    return name in users and password == 'thebest'
+        return "Success"
 
-def login_helper(name, root_folder):
-    return render_template('hello.html', name=name, root_folder=root_folder)
+    return "Empty credentials"
+
+@app.route("/show_users/", methods=['GET'])
+def show_users():
+    data = request.get_json()
+    print("data", data)
+    print(request.headers['Content-Type'])
+    cursor = db.users.find({})
+    return str(list(cursor))
+    
+
     

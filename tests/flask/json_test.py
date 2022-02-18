@@ -25,6 +25,8 @@ def show_user_words():
 def login():
     data = request.get_json()
     print("data", data)
+
+    print(request.headers['Content-Type'])
     
     if data:
         if 'email' in data:
@@ -39,9 +41,9 @@ def login():
                     print("validated")
                     print("password ending:", password[len(password)-3:])
                     return '''
-                            User: {} exists
+                            The user '{}' exists
                             and
-                            Password ending in ...{} was validated as correct
+                            Password ending in '{} was' validated as correct
                             '''.format(split_email[0], password[len(password)-3:])
 
                 print("not validated")
