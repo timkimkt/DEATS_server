@@ -1,15 +1,25 @@
 class Order:
 
-    def __init__(self, customer_id, deliverer_id, order):
+    # str: restaurant, status
+    # Respective objects: customer, deliverer, order
+    def __init__(self, customer, restaurant, details, deliverer=None, status="PENDING"):
+
+        # contains x, y coordinate of each restaurant
+        self.restaurant = {"COLLIS": [3, 3], "HOP": [5, 5]}
+
         # Initial information
-        self.customer_id = customer_id
-        self.deliverer_id = deliverer_id
-        self.order = order                   # [restaurant, food]
+        self.customer = customer
+        self.rest_loc = self.restaurant[restaurant]
+        self.details = details                   # food details
+        self.deliverer = deliverer
 
         # Updated during delivery
-        self.complete = False
+        self.status = status                 # pending means not yet matched
         self.confirmation_code = None
-        self.status = "IN_TRANSIT"                 # delivery status
+        self.complete = False
+
+        self.order_status = ["PENDING", "IN_TRANSIT", "PICKING_UP", "DELIVERING", "COMPLETE"]
+
 
     # updates the confirmation code
     def update_code(self, code):

@@ -2,14 +2,9 @@ from deliverer import *
 
 class Customer:
 
-    def __init__(self, id, coordinates, request):
+    def __init__(self, id, coordinates):
         self.id = id
-        self.coordinates = coordinates
-        self.request = request
+        self.coordinates = coordinates   # x, y coordinates
+        self.order = None
         self.matched = False
 
-    def request_order(self):
-
-        if deliverer.accept_order(self):
-
-        self.matched = True
