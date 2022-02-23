@@ -4,7 +4,7 @@ def create_user_json(email, password):
             "password" : password,
             "user_type" : None,
             "active" : False,
-            "matched" : False,
+            "matched" : None,
             "fin_location" : {
                 "x" : None, 
                 "y" : None
@@ -29,5 +29,10 @@ def start_delivery_json(fin_location):
             "user_type" : 'D',
             "active" : True,
             "fin_location" : fin_location
+        }
+
+def match_customer_json(deliver_id):
+    return {
+            "matched" : deliver_id
         }
 

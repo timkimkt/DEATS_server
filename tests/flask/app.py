@@ -1,6 +1,6 @@
-from flask import Flask
-from flask import request
+from flask import Flask, jsonify, request
 from bson.objectid import ObjectId
+from logic.user_finder import UserFinder
 
 # from markupsafe import escape
 
@@ -64,7 +64,12 @@ def request_delivery():
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
             {"$set": user_json.request_delivery_json(data["fin_location"], data["res_location"])},)
+        print("modified: ", result.modified_count, " number of customers")
+
         return str(result.modified_count)
+        
+
+        
 
 @app.route("/start_del/", methods=['POST'])
 def start_delivery():
@@ -75,5 +80,26 @@ def start_delivery():
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
             {"$set": user_json.start_delivery_json(data["fin_location"])},)
+        print("modified: ", result.modified_count, " number of deliverers")
+        
+        matching = UserFinder(data["fin_location"],
+            db.users.find({"user_type": "C", "active": True, "matched": None}))
+
+        matching.sort_customers()
+        
+        return jsonify(matching.get_k_least_score_customers(data["num"]))
+
+
+@app.route("/match/", methods=['POST'])
+def match():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        result = db.users.update_one({"_id": ObjectId(data["matched_id"])},
+            {"$set": user_json.match_customer_json(data["id"])},)
+        print("modified: ", result.modified_count, " number of customers")
+
         return str(result.modified_count)
     

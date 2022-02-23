@@ -1,9 +1,9 @@
-from order import *
-from customer import *
+from logic.order import *
+from logic.customer import *
 
 class Deliverer:
 
-    def __init__(self, id, coordinates, order=None, status="WAITING"):
+    def __init__(self, coordinates, id=None, order=None, status="WAITING"):
         self.id = id                     # e.g. d1
         self.coordinates = coordinates   # [x coordinate, y coordinate]
 
