@@ -6,7 +6,7 @@ import heapq
 def compute_distance(loc1, loc2):
     return sqrt((loc2['x'] - loc1['x'])**2 + (loc2['y'] - loc1['y'])**2)
 
-class UserFinder:
+class CustomerFinder:
     def __init__(self, deliverer_loc, customers):
         self.deliverer = Deliverer(coordinates=deliverer_loc)
         self.customers = customers
