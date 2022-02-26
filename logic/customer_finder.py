@@ -21,11 +21,11 @@ class CustomerFinder:
             heapq.heappush(self.queue, Customer(str(customer_json["_id"]), score))
 
     def get_k_least_score_customers(self, k):
-        result = [None] * k
+        result = []
 
         i = 0
         while self.queue and i < k:
-            result[i] = heapq.heappop(self.queue).id
+            result.append(heapq.heappop(self.queue).id)
             i += 1
 
         print("result", result)
