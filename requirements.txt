@@ -1,3 +1,5 @@
 Flask
 gunicorn
 pymongo[srv]
+email-validator
+password_strength
