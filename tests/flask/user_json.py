@@ -1,4 +1,8 @@
 # ------------- Inputs for MongoDB ------------- #
+import time
+from datetime import datetime
+
+
 def create_user_json(email, password, name=None, phone_num=None):
     return {
         "email": email,
@@ -7,8 +11,7 @@ def create_user_json(email, password, name=None, phone_num=None):
         "phone_num": phone_num,
         "user_type": None,
         "active": False,
-        "matched": None,
-        "fin_location": {
+        "final_des": {
             "x": None,
             "y": None
         },
@@ -19,27 +22,70 @@ def create_user_json(email, password, name=None, phone_num=None):
     }
 
 
-def request_delivery_json(fin_location, res_location):
+# don't need active status: indicated by being put in the order status
+# don't need user type: all orders are requested by a customer
+# need status: C (completed), W (waiting), M (matched), F (food picked up) to keep track of order and delivery status
+def order_delivery_json(customer_id, pickup_loc, drop_loc):
     return {
-        "user_type": 'C',
-        "active": True,
-        "fin_location": fin_location,
-        "res_location": res_location
+        "customer_id": customer_id,
+        "deliverer_id": None,
+        "pickup_loc": pickup_loc,
+        "drop_loc": drop_loc,
+        "order_date": datetime.fromtimestamp(time.time()),
+        "order_status": "W"
     }
 
 
 # temporarily assume final location and current location are the same
-def start_delivery_json(fin_location):
+def make_delivery_json(fin_location):
     return {
         "user_type": 'D',
         "active": True,
-        "fin_location": fin_location
+        "final_des": fin_location
     }
 
 
-def match_customer_json(deliver_id):
+def find_order_json():
     return {
-        "matched": deliver_id
+        "deliverer_id": None
+    }
+
+
+def match_order_json(customer_id):
+    return {
+        "customer_id": customer_id,
+        "order_status": "W"
+    }
+
+
+def show_orders_json(user_id):
+    return {
+        "customer_id": user_id,
+    }
+
+
+def show_deliveries_json(user_id):
+    return {
+        "delivery_id": user_id,
+    }
+
+
+def show_orders_response_json(orders):
+    return {
+        "orders": orders
+    }
+
+
+def show_deliveries_response_json(deliveries):
+    return {
+        "deliveries": deliveries
+    }
+
+
+def match_customer_json(deliverer_id=None, order_status="M"):
+    return {
+        "deliverer_id": deliverer_id,
+        "order_status": order_status
     }
 
 
@@ -69,9 +115,9 @@ def delete_acc_response_json(succeeded, msg):
     }
 
 
-def start_delivery_response_json(unmatched_customers):
+def start_delivery_response_json(unmatched_orders):
     return {
-        "unmatched_customers": unmatched_customers
+        "unmatched_orders": unmatched_orders
     }
 
 

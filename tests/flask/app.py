@@ -9,7 +9,7 @@ from tests.flask.validate_email import validate_email
 
 DATABASE_URL = f'mongodb+srv://db:db@cluster0.ixijz.mongodb.net/?retryWrites=true&w=majority'
 client = pymongo.MongoClient(DATABASE_URL)
-db = client.test
+db = client.test1
 app = Flask(__name__)
 g_count = 0
 
@@ -135,37 +135,33 @@ def global_count():
     return user_json.global_count_response_json(g_count)
 
 
-@app.route("/request_del/", methods=['POST'])
-def request_delivery():
+@app.route("/order_del/", methods=['POST'])
+def order_delivery():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        result = db.orders.insert_one(user_json.order_delivery_json(ObjectId(data["id"]), data["pickup_loc"],
+                                                                    data["drop_loc"]))
+        print("modified: ", result.inserted_id, " number of customers")
+
+        return user_json.success_response_json(bool(result.inserted_id), "Delivery requested")
+
+
+@app.route("/make_del/", methods=['POST'])
+def make_delivery():
     data = request.get_json()
 
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": user_json.request_delivery_json(data["fin_location"],
-                                                                              data["res_location"])}, )
-        print("modified: ", result.modified_count, " number of customers")
-
-        # ensure one-to-one delivery-customer matching
-        # cursor = db.users.find({"user_type": "D", "active": True, "matched": None})
-
-        return user_json.success_response_json(bool(result.modified_count), "Delivery requested")
-
-
-@app.route("/start_del/", methods=['POST'])
-def start_delivery():
-    data = request.get_json()
-
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
-        result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": user_json.start_delivery_json(data["fin_location"])}, )
+                                     {"$set": user_json.make_delivery_json(data["final_des"])}, )
         print("modified: ", result.modified_count, " number of deliverers")
 
-        customer_finder = CustomerFinder(data["fin_location"],
-                                         db.users.find({"user_type": "C", "active": True, "matched": None}))
+        customer_finder = CustomerFinder(data["final_des"],
+                                         db.orders.find(user_json.find_order_json()))
 
         customer_finder.sort_customers()
 
@@ -181,8 +177,8 @@ def match():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.users.update_one({"_id": ObjectId(data["matched_id"])},
-                                        {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
+        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
+                                         {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
         if succeeded:
@@ -205,8 +201,8 @@ def unmatch():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.users.update_one({"_id": ObjectId(data["matched_id"])},
-                                        {"$set": user_json.match_customer_json(None)}, ).modified_count
+        succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
+                                        {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
         if succeeded:
@@ -218,3 +214,41 @@ def unmatch():
         print("modified: ", succeeded, " number of users")
 
     return user_json.success_response_json(succeeded, msg)
+
+
+@app.route("/orders/", methods=['POST'])
+def show_orders():
+    data = request.get_json()
+    msg = "Absent JSON data. Provide a valid JSON data"
+    succeeded = False
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["id"]:
+            cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
+
+        else:
+            cursor = db.orders.find()
+            print(cursor)
+
+        return user_json.show_orders_response_json(str(list(cursor)))
+
+
+@app.route("/deliveries/", methods=['POST'])
+def show_deliveries():
+    data = request.get_json()
+    msg = "Absent JSON data. Provide a valid JSON data"
+    succeeded = False
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["id"]:
+            cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
+
+        else:
+            cursor = db.orders.find()
+
+        return user_json.show_deliveries_response_json(str(list(cursor)))
+
