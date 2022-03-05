@@ -179,6 +179,7 @@ def get_order_status():
             result = db.orders.find({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
             if result:
+                print("oder status", list(result))
                 return user_json.get_order_status_response(True, result)
 
             return user_json.get_order_status_response(False, result)
