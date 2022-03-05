@@ -141,7 +141,7 @@ def order_delivery():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"],
-                                                                    data["drop_loc"]))
+                                                                    data["drop_loc"], data["pickup_loc_name"]))
         print("modified: ", result.inserted_id, " number of customers")
 
         return user_json.success_response_json(bool(result.inserted_id), "Delivery requested")
