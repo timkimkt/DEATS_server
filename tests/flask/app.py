@@ -176,7 +176,7 @@ def get_order_status():
         print("data", data)
         print(request.headers['Content-Type'])
         if data["order_id"]:
-            result = db.orders.find(ObjectId(data["order_id"]), {"order_status": 1, "_id": 0})
+            result = db.orders.find({ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
             if result:
                 return user_json.get_order_status_response(True, result)
