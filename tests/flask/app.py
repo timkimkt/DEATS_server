@@ -179,10 +179,12 @@ def get_order_status():
             result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
             if result:
-                print("oder status", result)
-                return user_json.get_order_status_response(result, True)
+                user_json.make_get_order_status_response(result, True)
 
-            return user_json.get_order_status_response(list(result), False)
+            else:
+                user_json.make_get_order_status_response(list(result), False)
+
+            return result
 
 
 @app.route("/match/", methods=['POST'])
