@@ -180,9 +180,9 @@ def get_order_status():
 
             if result:
                 print("oder status", result)
-                return user_json.get_order_status_response(True, result)
+                return user_json.get_order_status_response(result, True)
 
-            return user_json.get_order_status_response(False, list(result))
+            return user_json.get_order_status_response(list(result), False)
 
 
 @app.route("/match/", methods=['POST'])
