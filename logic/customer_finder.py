@@ -1,7 +1,12 @@
+from bson.objectid import ObjectId
+
 from logic.customer import Customer
 from logic.deliverer import Deliverer
 from math import sqrt
+from tests.flask.mongo_client_connection import MongoClientConnection
 import heapq
+
+db = MongoClientConnection.get_database()
 
 
 def compute_distance(loc1, loc2):
@@ -17,21 +22,35 @@ class CustomerFinder:
     def sort_customers(self):
         for customer_json in self.customers:
             print("customer: ", customer_json)
+
             score = self.compute_score(customer_json["pickup_loc"], customer_json["drop_loc"])
             print("score: ", score)
             print("customer's id: ", str(customer_json["_id"]))
-            heapq.heappush(self.queue, Customer(str(customer_json["_id"]), score))
+            heapq.heappush(self.queue, Customer(customer_json["customer_id"], str(customer_json["_id"]),
+                                                customer_json["pickup_loc"], customer_json["drop_loc"], score))
 
     def get_k_least_score_customers(self, k):
-        result = []
+        least_scored_customers = []
 
         i = 0
         while self.queue and i < k:
-            result.append(heapq.heappop(self.queue).id)
+            customer = heapq.heappop(self.queue)
+            # Not necessary to return emails/phone contacts of customers to deliverers before they match with
+            # a customer...adding just in case deliverers want to call customers to find out more details
+            # before they match with them
+            # Might take them out in the future if they cause privacy issues
+            print("this customer", customer.customer_id)
+            result = db.users.find_one({"_id": ObjectId(customer.customer_id)},
+                                       {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
+            result["pickup_loc"] = customer.pickup_loc
+            result["drop_loc"] = customer.drop_loc
+            result["order_id"] = customer.order_id
+
+            least_scored_customers.append(result)
             i += 1
 
-        print("result", result)
-        return result
+        print("result", least_scored_customers)
+        return least_scored_customers
 
     def compute_score(self, pickup_loc_coordinates, drop_location_coordinates):
         print(pickup_loc_coordinates, drop_location_coordinates)

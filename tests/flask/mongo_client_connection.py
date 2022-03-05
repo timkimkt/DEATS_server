@@ -1,0 +1,9 @@
+from pymongo import MongoClient
+
+DATABASE_URL = f'mongodb+srv://db:db@cluster0.ixijz.mongodb.net/?retryWrites=true&w=majority'
+
+
+class MongoClientConnection(object):
+    @staticmethod
+    def get_database():
+        return MongoClient(DATABASE_URL).test1

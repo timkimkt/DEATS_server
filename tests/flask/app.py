@@ -1,15 +1,13 @@
-import pymongo
 import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
 from flask import Flask, request
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
+from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
-DATABASE_URL = f'mongodb+srv://db:db@cluster0.ixijz.mongodb.net/?retryWrites=true&w=majority'
-client = pymongo.MongoClient(DATABASE_URL)
-db = client.test1
+db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
 
@@ -142,7 +140,7 @@ def order_delivery():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        result = db.orders.insert_one(user_json.order_delivery_json(ObjectId(data["id"]), data["pickup_loc"],
+        result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"],
                                                                     data["drop_loc"]))
         print("modified: ", result.inserted_id, " number of customers")
 

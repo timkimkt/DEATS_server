@@ -115,9 +115,9 @@ def delete_acc_response_json(succeeded, msg):
     }
 
 
-def start_delivery_response_json(unmatched_orders):
+def start_delivery_response_json(unmatched_users):
     return {
-        "unmatched_orders": unmatched_orders
+        "unmatched_users": unmatched_users
     }
 
 
