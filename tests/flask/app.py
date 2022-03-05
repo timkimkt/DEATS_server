@@ -1,15 +1,13 @@
-import pymongo
 import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
 from flask import Flask, request
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
+from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
-DATABASE_URL = f'mongodb+srv://db:db@cluster0.ixijz.mongodb.net/?retryWrites=true&w=majority'
-client = pymongo.MongoClient(DATABASE_URL)
-db = client.test1
+db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
 
@@ -142,7 +140,7 @@ def order_delivery():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        result = db.orders.insert_one(user_json.order_delivery_json(ObjectId(data["id"]), data["pickup_loc"],
+        result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"],
                                                                     data["drop_loc"]))
         print("modified: ", result.inserted_id, " number of customers")
 
@@ -166,6 +164,25 @@ def make_delivery():
         customer_finder.sort_customers()
 
         return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
+
+
+@app.route("/order_status/", methods=['POST'])
+def get_order_status():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["order_id"]:
+            result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
+
+            if result:
+                user_json.make_get_order_status_response(result, True)
+
+            else:
+                user_json.make_get_order_status_response(list(result), False)
+
+            return result
 
 
 @app.route("/match/", methods=['POST'])
@@ -251,4 +268,3 @@ def show_deliveries():
             cursor = db.orders.find()
 
         return user_json.show_deliveries_response_json(str(list(cursor)))
-
