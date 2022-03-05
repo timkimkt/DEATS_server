@@ -121,6 +121,13 @@ def start_delivery_response_json(unmatched_orders):
     }
 
 
+def get_order_status_response(succeeded, order_status):
+    return {
+        "succeeded": succeeded,
+        "order_status": order_status
+    }
+
+
 def success_response_json(succeeded, msg):
     return {
         "succeeded": succeeded,

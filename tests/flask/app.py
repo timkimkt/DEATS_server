@@ -168,6 +168,22 @@ def make_delivery():
         return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
 
 
+@app.route("/order_status/", methods=['POST'])
+def get_order_status():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["order_id"]:
+            result = db.orders.find(ObjectId(data["order_id"]), {"order_status": 1, "_id": 0})
+
+            if result:
+                return user_json.get_order_status_response(True, result)
+
+            return user_json.get_order_status_response(False, result)
+
+
 @app.route("/match/", methods=['POST'])
 def match():
     data = request.get_json()
@@ -251,4 +267,3 @@ def show_deliveries():
             cursor = db.orders.find()
 
         return user_json.show_deliveries_response_json(str(list(cursor)))
-
