@@ -116,6 +116,13 @@ def delete_acc_response_json(succeeded, msg):
     }
 
 
+def order_delivery_response_json(succeeded, order_id):
+    return {
+        "succeeded": succeeded,
+        "order_id": order_id
+    }
+
+
 def start_delivery_response_json(unmatched_users):
     return {
         "unmatched_users": unmatched_users

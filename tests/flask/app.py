@@ -26,7 +26,8 @@ def create_account():
                 user = db.users.find_one({"email": data["email"]})
                 print("email_check", user)
                 if user:
-                    msg = "The Dartmouth email provided is taken. Log in instead or use a different email address"
+                    msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
+                          "different email address "
 
                 elif data["password"]:
                     # strong password creation is a pain, so allow developers to test without password validation
@@ -149,7 +150,7 @@ def order_delivery():
                                                                     data["drop_loc"], data["pickup_loc_name"]))
         print("modified: ", result.inserted_id, " number of customers")
 
-        return user_json.success_response_json(bool(result.inserted_id), "Delivery requested")
+        return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
 
 @app.route("/make_del/", methods=['POST'])
