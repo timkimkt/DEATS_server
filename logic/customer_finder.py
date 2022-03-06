@@ -29,7 +29,7 @@ class CustomerFinder:
             print("customer's id: ", str(customer_json["_id"]))
             heapq.heappush(self.queue, Customer(customer_json["customer_id"], str(customer_json["_id"]),
                                                 customer_json["pickup_loc"], customer_json["drop_loc"],
-                                                customer_json["pickup_loc_name"], score))
+                                                customer_json["pickup_loc_name"], customer_json["drop_address"],score))
 
     def get_k_least_score_customers(self, k):
         least_scored_customers = []
