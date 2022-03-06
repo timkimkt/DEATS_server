@@ -23,8 +23,13 @@ def create_account():
         try:
             if data["email"]:
                 valid_email = validate_email(data["email"])
+                user = db.users.find_one({"email": data["email"]})
+                print("email_check", user)
+                if user:
+                    msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
+                          "different email address "
 
-                if data["password"]:
+                elif data["password"]:
                     # strong password creation is a pain, so allow developers to test without password validation
                     if not data["test"]:
                         validate_password(data["password"])
@@ -33,6 +38,7 @@ def create_account():
                                                    data.get("phone_num")))
                     msg = "User deets are now on the server"
                     return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
+                return user_json.create_acc_response_json(False, msg)
 
         except ValueError as err:
             return user_json.create_acc_response_json(False, str(err))
@@ -141,10 +147,10 @@ def order_delivery():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"],
-                                                                    data["drop_loc"]))
+                                                                    data["drop_loc"], data["pickup_loc_name"]))
         print("modified: ", result.inserted_id, " number of customers")
 
-        return user_json.success_response_json(bool(result.inserted_id), "Delivery requested")
+        return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
 
 @app.route("/make_del/", methods=['POST'])
