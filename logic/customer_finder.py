@@ -23,7 +23,8 @@ class CustomerFinder:
         for customer_json in self.customers:
             print("customer: ", customer_json)
 
-            score = self.compute_score(customer_json["pickup_loc"], customer_json["drop_loc"])
+            score = self.compute_score(
+                customer_json["pickup_loc"], customer_json["drop_loc"])
             print("score: ", score)
             print("customer's id: ", str(customer_json["_id"]))
             heapq.heappush(self.queue, Customer(customer_json["customer_id"], str(customer_json["_id"]),
@@ -44,6 +45,7 @@ class CustomerFinder:
             result = db.users.find_one({"_id": ObjectId(customer.customer_id)},
                                        {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
             result["pickup_loc_name"] = customer.pickup_loc_name
+            result["drop_address"] = customer.drop_address
             result["pickup_loc"] = customer.pickup_loc
             result["drop_loc"] = customer.drop_loc
             result["order_id"] = customer.order_id
@@ -56,8 +58,10 @@ class CustomerFinder:
 
     def compute_score(self, pickup_loc_coordinates, drop_location_coordinates):
         print(pickup_loc_coordinates, drop_location_coordinates)
-        a = compute_distance(self.deliverer.coordinates, pickup_loc_coordinates)
+        a = compute_distance(self.deliverer.coordinates,
+                             pickup_loc_coordinates)
         b = compute_distance(pickup_loc_coordinates, drop_location_coordinates)
-        c = compute_distance(pickup_loc_coordinates, self.deliverer.coordinates)
+        c = compute_distance(pickup_loc_coordinates,
+                             self.deliverer.coordinates)
 
         return a + b - c
