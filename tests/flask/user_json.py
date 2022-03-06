@@ -28,11 +28,11 @@ def create_user_json(email, password, name=None, phone_num=None):
 def order_delivery_json(customer_id, pickup_loc, drop_loc, pickup_loc_name, drop_address):
     return {
         "customer_id": customer_id,
-        "deliverer_id": None,
         "pickup_loc": pickup_loc,
         "drop_loc": drop_loc,
         "pickup_loc_name": pickup_loc_name,
         "drop_address": drop_address,
+        "deliverer_id": None,
         "order_date": datetime.fromtimestamp(time.time()),
         "order_status": "W"
     }
