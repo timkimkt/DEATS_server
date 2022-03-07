@@ -135,8 +135,8 @@ def make_get_my_deliverer_response(result, succeeded):
     return result
 
 
-def make_get_order_status_response(result, msg):
-    result["msg"] = msg
+def make_get_order_status_response(result, succeeded):
+    result["succeeded"] = succeeded
 
 
 def success_response_json(succeeded, msg):

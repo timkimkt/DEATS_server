@@ -205,7 +205,8 @@ def get_order_status():
                 user_json.make_get_order_status_response(result, True)
 
             else:
-                user_json.make_get_order_status_response(list(result), False)
+                result = {}
+                user_json.make_get_order_status_response(result, False)
 
             return result
 
