@@ -218,7 +218,7 @@ def match():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
+        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
                                          {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
