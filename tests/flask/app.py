@@ -172,6 +172,24 @@ def make_delivery():
         return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
 
 
+@app.route("/my_deliverer/", methods=['POST'])
+def get_my_deliverer():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["order_id"]:
+            deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer": 1, "_id": 0})
+
+            if deliverer:
+                deliverer_info = db.users.find_one({"_id": ObjectId(data[deliverer])}, {"name": 1, "email": 1,
+                                                                                        "phone_num": 1, "_id": 0})
+                return user_json.make_get_my_deliverer_response(deliverer_info, True)
+
+            return user_json.make_get_my_deliverer_response(deliverer, False)
+
+
 @app.route("/order_status/", methods=['POST'])
 def get_order_status():
     data = request.get_json()

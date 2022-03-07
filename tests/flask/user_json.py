@@ -129,6 +129,10 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
+def make_get_my_deliverer_response(result, msg):
+    result["msg"] = msg
+
+
 def make_get_order_status_response(result, msg):
     result["msg"] = msg
 
