@@ -183,10 +183,15 @@ def get_my_deliverer():
             deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
             if deliverer:
-                deliverer_info = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
+                print("deliverer", deliverer)
+
+                if deliverer["deliverer_id"]:
+                    deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
                                                    {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
 
-                return user_json.make_get_my_deliverer_response(deliverer_info, True)
+                print("deliverer_info", deliverer)
+
+                return user_json.make_get_my_deliverer_response(deliverer, True)
 
             return user_json.make_get_my_deliverer_response({}, False)
 
