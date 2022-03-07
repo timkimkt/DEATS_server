@@ -23,11 +23,12 @@ def create_account():
         try:
             if data["email"]:
                 valid_email = validate_email(data["email"])
-                user = db.users.find_one({"email": data["email"]})
+                user = db.users.find_one({"email": valid_email.email})
                 print("email_check", user)
                 if user:
                     msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
                           "different email address "
+                    return user_json.create_acc_response_json(False, msg)
 
                 elif data["password"]:
                     # strong password creation is a pain, so allow developers to test without password validation
@@ -38,7 +39,6 @@ def create_account():
                                                    data.get("phone_num")))
                     msg = "User deets are now on the server"
                     return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
-                return user_json.create_acc_response_json(False, msg)
 
         except ValueError as err:
             return user_json.create_acc_response_json(False, str(err))
@@ -98,14 +98,14 @@ def login():
 
     try:
         if data["email"]:
-            validate_email(data["email"])
-            user = db.users.find_one({"email": data["email"]})
+            valid_email = validate_email(data["email"])
+            user = db.users.find_one({"email": valid_email.email})
             print("email_check", user)
             if not user:
                 msg = "The Dartmouth email provided does not exist on the server"
 
             else:
-                user = db.users.find_one({"email": data["email"], "password": data["password"]})
+                user = db.users.find_one({"email": valid_email.email, "password": data["password"]})
                 print("password_check", user)
                 if not user:
                     msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
