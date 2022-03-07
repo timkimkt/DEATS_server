@@ -180,14 +180,15 @@ def get_my_deliverer():
         print("data", data)
         print(request.headers['Content-Type'])
         if data["order_id"]:
-            deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer": 1, "_id": 0})
+            deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
             if deliverer:
-                deliverer_info = db.users.find_one({"_id": ObjectId(data[deliverer])}, {"name": 1, "email": 1,
-                                                                                        "phone_num": 1, "_id": 0})
+                deliverer_info = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
+                                                   {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
+
                 return user_json.make_get_my_deliverer_response(deliverer_info, True)
 
-            return user_json.make_get_my_deliverer_response(deliverer, False)
+            return user_json.make_get_my_deliverer_response({}, False)
 
 
 @app.route("/order_status/", methods=['POST'])
