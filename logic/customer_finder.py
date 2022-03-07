@@ -28,7 +28,7 @@ class CustomerFinder:
             print("customer's id: ", str(customer_json["_id"]))
             heapq.heappush(self.queue, Customer(customer_json["customer_id"], str(customer_json["_id"]),
                                                 customer_json["pickup_loc"], customer_json["drop_loc"],
-                                                customer_json["pickup_loc_name"], score))
+                                                customer_json["pickup_loc_name"], customer_json["drop_loc_name"], score))
 
     def get_k_least_score_customers(self, k):
         least_scored_customers = []
@@ -44,6 +44,8 @@ class CustomerFinder:
             result = db.users.find_one({"_id": ObjectId(customer.customer_id)},
                                        {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
             result["pickup_loc_name"] = customer.pickup_loc_name
+            result["drop_loc_name"] = customer.drop_loc_name
+            result["customer_id"] = customer.customer_id
             result["pickup_loc"] = customer.pickup_loc
             result["drop_loc"] = customer.drop_loc
             result["order_id"] = customer.order_id

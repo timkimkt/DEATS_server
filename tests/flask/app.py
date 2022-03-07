@@ -146,8 +146,8 @@ def order_delivery():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"],
-                                                                    data["drop_loc"], data["pickup_loc_name"]))
+        result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
+                                                                    data["pickup_loc_name"], data["drop_loc_name"]))
         print("modified: ", result.inserted_id, " number of customers")
 
         return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
@@ -172,6 +172,30 @@ def make_delivery():
         return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
 
 
+@app.route("/my_deliverer/", methods=['POST'])
+def get_my_deliverer():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        if data["order_id"]:
+            deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
+
+            if deliverer:
+                print("deliverer", deliverer)
+
+                if deliverer["deliverer_id"]:
+                    deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
+                                                   {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
+
+                print("deliverer_info", deliverer)
+
+                return user_json.make_get_my_deliverer_response(deliverer, True)
+
+            return user_json.make_get_my_deliverer_response({}, False)
+
+
 @app.route("/order_status/", methods=['POST'])
 def get_order_status():
     data = request.get_json()
@@ -186,7 +210,8 @@ def get_order_status():
                 user_json.make_get_order_status_response(result, True)
 
             else:
-                user_json.make_get_order_status_response(list(result), False)
+                result = {}
+                user_json.make_get_order_status_response(result, False)
 
             return result
 
@@ -200,7 +225,7 @@ def match():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
+        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
                                          {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
