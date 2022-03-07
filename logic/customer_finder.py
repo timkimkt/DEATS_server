@@ -44,6 +44,7 @@ class CustomerFinder:
             result = db.users.find_one({"_id": ObjectId(customer.customer_id)},
                                        {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
             result["pickup_loc_name"] = customer.pickup_loc_name
+            result["customer_id"] = customer.customer_id
             result["pickup_loc"] = customer.pickup_loc
             result["drop_loc"] = customer.drop_loc
             result["order_id"] = customer.order_id
