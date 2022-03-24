@@ -1,7 +1,9 @@
 import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
-from flask import Flask, request
+from datetime import timedelta
+from flask import Flask, request, session
+from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
@@ -10,6 +12,14 @@ from tests.flask.validate_email import validate_email
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
+
+"Load configuration"
+SESSION_TYPE = "mongodb"
+SESSION_MONGODB = MongoClientConnection.get_mongo_client()
+SESSION_MONGODB_DB = "test1"
+
+app.config.from_object(__name__)
+Session(app)
 
 
 @app.route("/create_acc/", methods=['POST'])
@@ -38,6 +48,10 @@ def create_account():
                         user_json.create_user_json(valid_email.email, data["password"], data.get("name"),
                                                    data.get("phone_num")))
                     msg = "User deets are now on the server"
+
+                    # save user session
+                    session["id"] = str(result.inserted_id)
+
                     return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
 
         except ValueError as err:
@@ -52,18 +66,23 @@ def update_account():
 
     if data:
         if data["id"]:
-            user_id = data["id"]
-            del data["id"]
-            succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
-                                                 {"$set": data}).modified_count)
 
-            if succeeded:
-                msg = "The user's info has been updated successfully"
+            if session["id"]:
+                user_id = data["id"]
+                del data["id"]
+                succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
+                                                     {"$set": data}).modified_count)
+
+                if succeeded:
+                    msg = "The user's info has been updated successfully"
+
+                else:
+                    msg = "The user's info wasn't updated. The change already exist"
+
+                print("modified: ", succeeded, " number of users")
 
             else:
-                msg = "The user's info wasn't updated. The change already exist"
-
-            print("modified: ", succeeded, " number of users")
+                return user_json.login_request_response_json()
 
         else:
             msg = "No user id provided. The server needs to know the id of the user who's info you want to update"
@@ -118,6 +137,9 @@ def login():
                     name = user["name"]
                     phone_num = user["phone_num"]
 
+                    # save user session
+                    session["id"] = id
+
         return user_json.login_response_json(succeeded, msg, id, name, phone_num)
 
     except ValueError as err:
@@ -146,11 +168,15 @@ def order_delivery():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
-                                                                    data["pickup_loc_name"], data["drop_loc_name"]))
-        print("modified: ", result.inserted_id, " number of customers")
 
-        return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
+        if session["id"]:
+            result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
+                                                                        data["pickup_loc_name"], data["drop_loc_name"]))
+            print("modified: ", result.inserted_id, " number of customers")
+
+            return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
+
+        return user_json.login_request_response_json()
 
 
 @app.route("/make_del/", methods=['POST'])
@@ -160,16 +186,20 @@ def make_delivery():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": user_json.make_delivery_json(data["final_des"])}, )
-        print("modified: ", result.modified_count, " number of deliverers")
 
-        customer_finder = CustomerFinder(data["final_des"],
-                                         db.orders.find(user_json.find_order_json()))
+        if session["id"]:
+            result = db.users.update_one({"_id": ObjectId(data["id"])},
+                                         {"$set": user_json.make_delivery_json(data["final_des"])}, )
+            print("modified: ", result.modified_count, " number of deliverers")
 
-        customer_finder.sort_customers()
+            customer_finder = CustomerFinder(data["final_des"],
+                                             db.orders.find(user_json.find_order_json()))
 
-        return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
+            customer_finder.sort_customers()
+
+            return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
+
+        return user_json.login_request_response_json()
 
 
 @app.route("/my_deliverer/", methods=['POST'])
@@ -179,21 +209,25 @@ def get_my_deliverer():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        if data["order_id"]:
-            deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
-            if deliverer:
-                print("deliverer", deliverer)
+        if session["id"]:
+            if data["order_id"]:
+                deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
-                if deliverer["deliverer_id"]:
-                    deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
-                                                   {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
+                if deliverer:
+                    print("deliverer", deliverer)
 
-                print("deliverer_info", deliverer)
+                    if deliverer["deliverer_id"]:
+                        deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
+                                                       {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
 
-                return user_json.make_get_my_deliverer_response(deliverer, True)
+                    print("deliverer_info", deliverer)
 
-            return user_json.make_get_my_deliverer_response({}, False)
+                    return user_json.make_get_my_deliverer_response(deliverer, True)
+
+                return user_json.make_get_my_deliverer_response({}, False)
+
+        return user_json.login_request_response_json()
 
 
 @app.route("/order_status/", methods=['POST'])
@@ -203,17 +237,21 @@ def get_order_status():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        if data["order_id"]:
-            result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
-            if result:
-                user_json.make_get_order_status_response(result, True)
+        if session["id"]:
+            if data["order_id"]:
+                result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
-            else:
-                result = {}
-                user_json.make_get_order_status_response(result, False)
+                if result:
+                    user_json.make_get_order_status_response(result, True)
 
-            return result
+                else:
+                    result = {}
+                    user_json.make_get_order_status_response(result, False)
+
+                return result
+
+        return user_json.login_request_response_json()
 
 
 @app.route("/match/", methods=['POST'])
@@ -225,17 +263,22 @@ def match():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
-                                         {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
-        print("modified: ", succeeded, " number of customers")
 
-        if succeeded:
-            msg = "Request completed. User has been matched"
+        if session["id"]:
+            succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
+                                             {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
+            print("modified: ", succeeded, " number of customers")
+
+            if succeeded:
+                msg = "Request completed. User has been matched"
+
+            else:
+                msg = "Request not completed. User has already been matched"
+
+            print("modified: ", succeeded, " number of users")
 
         else:
-            msg = "Request not completed. User has already been matched"
-
-        print("modified: ", succeeded, " number of users")
+            return user_json.login_request_response_json()
 
     return user_json.success_response_json(succeeded, msg)
 
@@ -249,17 +292,22 @@ def unmatch():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
-                                        {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
-        print("modified: ", succeeded, " number of customers")
 
-        if succeeded:
-            msg = "Request completed. User has been unmatched"
+        if session["id"]:
+            succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
+                                            {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
+            print("modified: ", succeeded, " number of customers")
+
+            if succeeded:
+                msg = "Request completed. User has been unmatched"
+
+            else:
+                msg = "Request not completed. User has already been unmatched"
+
+            print("modified: ", succeeded, " number of users")
 
         else:
-            msg = "Request not completed. User has already been unmatched"
-
-        print("modified: ", succeeded, " number of users")
+            return user_json.login_request_response_json()
 
     return user_json.success_response_json(succeeded, msg)
 

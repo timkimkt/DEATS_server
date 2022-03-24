@@ -117,6 +117,13 @@ def delete_acc_response_json(succeeded, msg):
     }
 
 
+def login_request_response_json():
+    return {
+        "succeeded": False,
+        "login": True
+    }
+
+
 def order_delivery_response_json(succeeded, order_id):
     return {
         "succeeded": succeeded,
