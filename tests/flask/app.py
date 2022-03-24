@@ -1,3 +1,4 @@
+import redis
 import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
@@ -14,9 +15,9 @@ app = Flask(__name__)
 g_count = 0
 
 "Load configuration"
-SESSION_TYPE = "mongodb"
-SESSION_MONGODB = MongoClientConnection.get_mongo_client()
-SESSION_MONGODB_DB = "test1"
+SESSION_TYPE = "redis"
+SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138fa5d8d1061d0de35ae3e1919765@ec2-"
+                               "107-21-59-180.compute-1.amazonaws.com:24529")
 
 app.config.from_object(__name__)
 Session(app)

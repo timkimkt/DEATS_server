@@ -2,5 +2,6 @@ Flask
 gunicorn
 pymongo[srv]
 Flask-Session
+redis
 email-validator
 password_strength
