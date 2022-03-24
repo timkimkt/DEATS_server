@@ -68,7 +68,7 @@ def update_account():
     if data:
         if data["id"]:
 
-            if session["id"]:
+            if session.get("id"):
                 user_id = data["id"]
                 del data["id"]
                 succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
@@ -170,7 +170,7 @@ def order_delivery():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
                                                                         data["pickup_loc_name"], data["drop_loc_name"]))
             print("modified: ", result.inserted_id, " number of customers")
@@ -188,7 +188,7 @@ def make_delivery():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             result = db.users.update_one({"_id": ObjectId(data["id"])},
                                          {"$set": user_json.make_delivery_json(data["final_des"])}, )
             print("modified: ", result.modified_count, " number of deliverers")
@@ -211,7 +211,7 @@ def get_my_deliverer():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             if data["order_id"]:
                 deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
@@ -239,7 +239,7 @@ def get_order_status():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             if data["order_id"]:
                 result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
@@ -265,7 +265,7 @@ def match():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
                                              {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
             print("modified: ", succeeded, " number of customers")
@@ -294,7 +294,7 @@ def unmatch():
         print("data", data)
         print(request.headers['Content-Type'])
 
-        if session["id"]:
+        if session.get("id"):
             succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
                                             {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
             print("modified: ", succeeded, " number of customers")
