@@ -14,6 +14,9 @@ db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
 
+# Secret key for cryptographically signing session cookies (in bytes)
+app.secret_key = b'8&63^#J8]NIUBMCJXO_EJN'
+
 "Load configuration"
 SESSION_TYPE = "redis"
 SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138fa5d8d1061d0de35ae3e1919765@ec2-"
