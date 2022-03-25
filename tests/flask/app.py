@@ -1,9 +1,12 @@
 import redis
+from cas import CASClient
+from werkzeug.utils import redirect
+
 import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session
+from flask import Flask, request, session, url_for
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -24,6 +27,17 @@ SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138f
 
 app.config.from_object(__name__)
 Session(app)
+
+cas_client = CASClient(
+    version=3,
+    service_url="https://deats-backend-test.herokuapp.com/sso_login",
+    server_url="https://login.dartmouth.edu/cas"
+)
+
+
+@app.route('/')
+def index():
+    return redirect(url_for("sso_login"))
 
 
 @app.route("/create_acc/", methods=['POST'])
@@ -105,6 +119,27 @@ def delete_account():
         print(result.deleted_count)
         msg = "User with id, " + data["id"] + ", has been removed from the server"
         return user_json.delete_acc_response_json(True, msg)
+
+
+@app.route('/sso_login/')
+def sso_login():
+    next = request.args.get('next')
+    service_ticket = request.args.get("ticket")
+
+    print("next", next)
+    print(("tick", service_ticket))
+
+    # redirect to CAS server for user login if no ticket is found
+    if not service_ticket:
+        login_url = cas_client.get_login_url()
+        return redirect(login_url)
+
+    # verify the ticket if it exists
+    user, attributes, pgtiou = cas_client.verify_ticket(service_ticket)
+
+    print("user", user)
+    print("attributes", attributes)
+    print("pgtiou", pgtiou)
 
 
 @app.route('/login/', methods=['POST'])
