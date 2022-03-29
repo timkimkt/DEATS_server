@@ -142,8 +142,10 @@ def sso_login():
     print("attributes", attributes)
     print("pgtiou", pgtiou)
 
+    msg = "Dartmouth SSO login was successful through " \
+          + ("new server login" if attributes else "stored valid TGT in user TGC cookie")
     return user_json.sso_login_response_json(True,
-                                             "Dartmouth SSO login was successful",
+                                             msg,
                                              attributes.get("isFromNewLogin"),
                                              attributes.get("authenticationDate"),
                                              attributes.get("netid"),
