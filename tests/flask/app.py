@@ -31,7 +31,7 @@ Session(app)
 cas_client = CASClient(
     version=3,
     service_url="https://deats-backend-test.herokuapp.com/sso_login",
-    server_url="https://login.dartmouth.edu/cas"
+    server_url="https://login.dartmouth.edu/cas/"
 )
 
 
@@ -132,6 +132,7 @@ def sso_login():
     # redirect to CAS server for user login if no ticket is found
     if not service_ticket:
         login_url = cas_client.get_login_url()
+        print(login_url)
         return redirect(login_url)
 
     # verify the ticket if it exists
