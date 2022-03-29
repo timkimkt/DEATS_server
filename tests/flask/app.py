@@ -141,11 +141,13 @@ def sso_login():
     print("user", user)
     print("attributes", attributes)
     print("pgtiou", pgtiou)
+
     return user_json.sso_login_response_json(True,
                                              "Dartmouth SSO login was successful",
-                                             attributes["isFromNewLogin"],
-                                             attributes["authenticationDate"],
-                                             attributes["netid"], attributes["name"])
+                                             attributes.get("isFromNewLogin"),
+                                             attributes.get("authenticationDate"),
+                                             attributes.get("netid"),
+                                             attributes.get("name"))
 
 
 @app.route('/login/', methods=['POST'])
