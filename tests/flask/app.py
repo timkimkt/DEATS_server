@@ -141,6 +141,11 @@ def sso_login():
     print("user", user)
     print("attributes", attributes)
     print("pgtiou", pgtiou)
+    return user_json.sso_login_response_json(True,
+                                             "Dartmouth SSO login was successful",
+                                             attributes["isFromNewLogin"],
+                                             attributes["authenticationDate"],
+                                             attributes["netid"], attributes["name"])
 
 
 @app.route('/login/', methods=['POST'])
@@ -210,8 +215,9 @@ def order_delivery():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
-            result = db.orders.insert_one(user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
-                                                                        data["pickup_loc_name"], data["drop_loc_name"]))
+            result = db.orders.insert_one(
+                user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
+                                              data["pickup_loc_name"], data["drop_loc_name"]))
             print("modified: ", result.inserted_id, " number of customers")
 
             return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
@@ -259,7 +265,8 @@ def get_my_deliverer():
 
                     if deliverer["deliverer_id"]:
                         deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
-                                                       {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
+                                                                        {"name": 1, "email": 1, "phone_num": 1,
+                                                                         "_id": 0})
 
                     print("deliverer_info", deliverer)
 

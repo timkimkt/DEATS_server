@@ -102,6 +102,20 @@ def login_response_json(succeeded, msg, id, name, phone_num):
     }
 
 
+def sso_login_response_json(succeeded, msg, is_new_login, authentication_date, net_id, name):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "is_new_login": is_new_login,
+        "authentication_date": authentication_date,
+        "user_info":
+            {
+                "net_id": net_id,
+                "name": name
+            }
+    }
+
+
 def create_acc_response_json(succeeded, msg, user_id=None):
     return {
         "succeeded": succeeded,
