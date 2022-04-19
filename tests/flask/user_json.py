@@ -3,8 +3,9 @@ import time
 from datetime import datetime
 
 
-def create_user_json(email, password, name=None, phone_num=None):
+def create_user_json(email=None, password=None, name=None, phone_num=None):
     return {
+        "acc_active": True,
         "email": email,
         "name": name,
         "password": password,
@@ -92,13 +93,29 @@ def match_customer_json(deliverer_id=None, order_status="M"):
 
 
 # ------------- JSON responses ------------- #
-def login_response_json(succeeded, msg, id, name, phone_num):
+def login_response_json(succeeded, msg, id, name, phone_num=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
         "id": id,
         "name": name,
         "phone_num": phone_num
+    }
+
+
+def sso_login_response_json(succeeded, msg, id, name, net_id_email, phone_num, is_new_login, authentication_date):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "is_new_login": is_new_login,
+        "authentication_date": authentication_date,
+        "user_info":
+            {
+                "id": id,
+                "email": net_id_email,
+                "name": name,
+                "phone_num": phone_num,
+            }
     }
 
 
@@ -114,6 +131,27 @@ def delete_acc_response_json(succeeded, msg):
     return {
         "succeeded": succeeded,
         "msg": msg,
+    }
+
+
+def account_status_response_json(succeeded, msg):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+    }
+
+
+def request_denied_json_response(msg):
+    return {
+        "succeeded": False,
+        "msg": msg
+    }
+
+
+def login_request_response_json():
+    return {
+        "succeeded": False,
+        "login": True
     }
 
 

@@ -1,5 +1,8 @@
 Flask
 gunicorn
 pymongo[srv]
+Flask-Session
+python-cas
+redis
 email-validator
 password_strength
