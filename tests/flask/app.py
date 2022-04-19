@@ -134,8 +134,13 @@ def deactivate_account():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": {"acc_active": not data["deactivate_acc"]}}, )
-        msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
+                                     {"$set": {"acc_active": False}}, )
+        if result.modified_count:
+            msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
+
+        else:
+            msg = "The account for user with id, " + data["id"] + ", is already deactivated"
+
         return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
 
 
@@ -445,7 +450,7 @@ def show_orders():
             if not session.get("id"):
                 msg = "Request denied. You're not logged in on this device"
                 return user_json.request_denied_json_response(msg)
-            
+
             cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
 
         else:
