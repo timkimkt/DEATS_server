@@ -223,10 +223,18 @@ def sso_login():
 
 @app.route("/sso_logout/")
 def sso_logout():
-    logout_url = cas_client.get_logout_url()
-    print("logout_url", logout_url)
+    redirect_url = url_for('logout_callback', _external=True)
+    logout_url = cas_client.get_logout_url(redirect_url)
+    print(logout_url)
 
     return redirect(logout_url)
+
+
+@app.route('/logout_callback')
+def logout_callback():
+    # redirect from CAS logout request after CAS logout successfully
+    session.pop('username', None)
+    return 'Logged out from CAS. <a href="/login">Login</a>'
 
 
 @app.route("/login/", methods=['POST'])
