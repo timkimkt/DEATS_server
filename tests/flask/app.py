@@ -70,6 +70,9 @@ def create_account():
                     # save user session
                     session["id"] = str(result.inserted_id)
 
+                    # save account active status for easy access later on
+                    session["acc_active"] = True
+
                     return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
 
         except ValueError as err:
