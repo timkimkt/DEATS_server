@@ -378,7 +378,7 @@ def get_order_status():
                 return result
 
         msg = "Request denied. You're not logged in on this device"
-        return user_json.request_denied_json_response(msg)()
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/match/", methods=['POST'])
