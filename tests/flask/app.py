@@ -126,6 +126,7 @@ def delete_account():
         result = db.users.delete_one({"_id": ObjectId(data["id"])})
         if result.deleted_count:
             msg = "User with id, " + data["id"] + ", has been removed from the server"
+            session.pop("id", default=None)
 
         else:
             msg = "Request unsuccessful. No user with id, " + data["id"] + ", exists on the server"
