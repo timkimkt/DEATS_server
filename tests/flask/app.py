@@ -136,10 +136,28 @@ def deactivate_account():
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": False}}, )
         if result.modified_count:
-            msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
+            msg = "User with id, " + data["id"] + ", has been deactivated on the server"
 
         else:
             msg = "The account for user with id, " + data["id"] + ", is already deactivated"
+
+        return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
+
+
+@app.route("/reactivate_acc/", methods=['POST'])
+def reactivate_account():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        result = db.users.update_one({"_id": ObjectId(data["id"])},
+                                     {"$set": {"acc_active": True}}, )
+        if result.modified_count:
+            msg = "User with id, " + data["id"] + ", has been reactivated on the server"
+
+        else:
+            msg = "The account for user with id, " + data["id"] + ", is already active"
 
         return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
 
