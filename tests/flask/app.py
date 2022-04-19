@@ -100,7 +100,8 @@ def update_account():
                 print("modified: ", succeeded, " number of users")
 
             else:
-                return user_json.login_request_response_json()
+                msg = "Request denied. You're not logged in on this device"
+                return user_json.request_denied_json_response(msg)
 
         else:
             msg = "No user id provided. The server needs to know the id of the user who's info you want to update"
@@ -238,7 +239,9 @@ def order_delivery():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             result = db.orders.insert_one(
                 user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
@@ -247,7 +250,8 @@ def order_delivery():
 
             return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
-        return user_json.login_request_response_json()
+        msg = "Request denied. You're not logged in on this device"
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/make_del/", methods=['POST'])
@@ -262,7 +266,9 @@ def make_delivery():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             result = db.users.update_one({"_id": ObjectId(data["id"])},
                                          {"$set": user_json.make_delivery_json(data["final_des"])}, )
@@ -275,7 +281,8 @@ def make_delivery():
 
             return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
 
-        return user_json.login_request_response_json()
+        msg = "Request denied. You're not logged in on this device"
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/my_deliverer/", methods=['POST'])
@@ -290,7 +297,9 @@ def get_my_deliverer():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             if data["order_id"]:
                 deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
@@ -309,7 +318,8 @@ def get_my_deliverer():
 
                 return user_json.make_get_my_deliverer_response({}, False)
 
-        return user_json.login_request_response_json()
+        msg = "Request denied. You're not logged in on this device"
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/order_status/", methods=['POST'])
@@ -324,7 +334,9 @@ def get_order_status():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             if data["order_id"]:
                 result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
@@ -338,7 +350,8 @@ def get_order_status():
 
                 return result
 
-        return user_json.login_request_response_json()
+        msg = "Request denied. You're not logged in on this device"
+        return user_json.request_denied_json_response(msg)()
 
 
 @app.route("/match/", methods=['POST'])
@@ -355,7 +368,9 @@ def match():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
                                              {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
@@ -370,7 +385,8 @@ def match():
             print("modified: ", succeeded, " number of users")
 
         else:
-            return user_json.login_request_response_json()
+            msg = "Request denied. You're not logged in on this device"
+            return user_json.request_denied_json_response(msg)
 
     return user_json.success_response_json(succeeded, msg)
 
@@ -389,7 +405,9 @@ def unmatch():
             # This logic is used to make the server backward compatible
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
-                return user_json.inactive_acc_json_response()
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
 
             succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
                                             {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
@@ -404,7 +422,8 @@ def unmatch():
             print("modified: ", succeeded, " number of users")
 
         else:
-            return user_json.login_request_response_json()
+            msg = "Request denied. You're not logged in on this device"
+            return user_json.request_denied_json_response(msg)
 
     return user_json.success_response_json(succeeded, msg)
 
