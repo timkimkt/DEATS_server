@@ -129,7 +129,7 @@ def deactivate_account():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": {"acc_active": data["deactivate_acc"]}}, )
+                                     {"$set": {"acc_active": not data["deactivate_acc"]}}, )
         msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
         return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
 
@@ -390,7 +390,7 @@ def unmatch():
             print(session.get("acc_active"))
             if session.get("acc_active") is not None and session.get("acc_active") is False:
                 return user_json.inactive_acc_json_response()
-            
+
             succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
                                             {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
             print("modified: ", succeeded, " number of customers")
