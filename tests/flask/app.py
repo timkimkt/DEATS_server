@@ -259,6 +259,11 @@ def make_delivery():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+
             result = db.users.update_one({"_id": ObjectId(data["id"])},
                                          {"$set": user_json.make_delivery_json(data["final_des"])}, )
             print("modified: ", result.modified_count, " number of deliverers")
@@ -282,6 +287,11 @@ def get_my_deliverer():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+
             if data["order_id"]:
                 deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
@@ -311,6 +321,11 @@ def get_order_status():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+
             if data["order_id"]:
                 result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
 
@@ -337,6 +352,11 @@ def match():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+
             succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(data["order_id"])),
                                              {"$set": user_json.match_customer_json(data["id"])}, ).modified_count
             print("modified: ", succeeded, " number of customers")
@@ -366,6 +386,11 @@ def unmatch():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+            
             succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
                                             {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
             print("modified: ", succeeded, " number of customers")
