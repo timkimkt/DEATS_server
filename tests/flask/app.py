@@ -211,30 +211,42 @@ def sso_login():
     print("attributes", attributes)
     print("pgtiou", pgtiou)
 
-    msg = "Dartmouth SSO login was successful through " \
-          + ("new server login" if attributes else "stored valid TGT in user TGC cookie")
-    return user_json.sso_login_response_json(True,
-                                             msg,
-                                             attributes.get("isFromNewLogin"),
-                                             attributes.get("authenticationDate"),
-                                             attributes.get("netid"),
-                                             attributes.get("name"))
+    net_id_email = attributes.get("netid") + "@dartmouth.edu"
+
+    if user:
+        result_find = db.users.find_one({"email": net_id_email})
+
+        if result_find:
+            msg = "You've logged into DEATS successfully through Dartmouth SSO"
+            print(result_find)
+            id = str(result_find["_id"])
+            name = result_find["name"]
+            phone_num = result_find["phone_num"]
+
+        else:
+            name = attributes.get("name")
+            result_insert = db.users.insert_one(user_json.create_user_json(net_id_email, name=name))
+            msg = "You've successfully created an account with DEATS through Dartmouth SSO"
+            id = str(result_insert.inserted_id)
+            phone_num = None
+            
+        return user_json.sso_login_response_json(True,
+                                                 msg,
+                                                 id,
+                                                 name,
+                                                 net_id_email,
+                                                 phone_num,
+                                                 attributes.get("isFromNewLogin"),
+                                                 attributes.get("authenticationDate")
+                                                 )
 
 
 @app.route("/sso_logout/")
 def sso_logout():
-    redirect_url = url_for('logout_callback', _external=True)
-    logout_url = cas_client.get_logout_url(redirect_url)
-    print(logout_url)
+    logout_url = cas_client.get_logout_url()
+    print("logout_url", logout_url)
 
     return redirect(logout_url)
-
-
-@app.route('/logout_callback')
-def logout_callback():
-    # redirect from CAS logout request after CAS logout successfully
-    session.pop('username', None)
-    return 'Logged out from CAS. <a href="/login">Login</a>'
 
 
 @app.route("/login/", methods=['POST'])
