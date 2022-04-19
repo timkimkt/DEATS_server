@@ -222,6 +222,8 @@ def sso_login():
             id = str(result_find["_id"])
             name = result_find["name"]
             phone_num = result_find["phone_num"]
+            # save account active status for easy access later on
+            session["acc_active"] = result_find.get("acc_active")
 
         else:
             name = attributes.get("name")
@@ -230,11 +232,11 @@ def sso_login():
             id = str(result_insert.inserted_id)
             phone_num = None
 
+            # save account active status for easy access later on
+            session["acc_active"] = True
+
         # save user session
         session["id"] = id
-
-        # save account active status for easy access later on
-        session["acc_active"] = True
 
         return user_json.sso_login_response_json(True,
                                                  msg,
