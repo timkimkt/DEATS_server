@@ -121,9 +121,12 @@ def delete_account():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.delete_one({"_id": ObjectId(data["id"])})
-        print(result.deleted_count)
-        msg = "User with id, " + data["id"] + ", has been removed from the server"
-        return user_json.delete_acc_response_json(True, msg)
+        if result.deleted_count:
+            msg = "User with id, " + data["id"] + ", has been removed from the server"
+
+        else:
+            msg = "Request unsuccessful. No user with id, " + data["id"] + ", exists on the server"
+        return user_json.delete_acc_response_json(bool(result.deleted_count), msg)
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
