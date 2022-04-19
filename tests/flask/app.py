@@ -135,13 +135,18 @@ def deactivate_account():
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": False}}, )
-        if result.modified_count:
+
+        print("reactivate_acc result:", result.raw_result)
+        if not result.matched_count:
+            msg = "The account with id, " + data["id"] + ", does not exist on the server"
+
+        elif result.modified_count:
             msg = "User with id, " + data["id"] + ", has been deactivated on the server"
 
         else:
             msg = "The account for user with id, " + data["id"] + ", is already deactivated"
 
-        return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
+        return user_json.account_status_response_json(bool(result.modified_count), msg)
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
@@ -151,15 +156,20 @@ def reactivate_account():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
+
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": True}}, )
-        if result.modified_count:
+        print("reactivate_acc result:", result.raw_result)
+        if not result.matched_count:
+            msg = "The account with id, " + data["id"] + ", does not exist on the server"
+
+        elif result.modified_count:
             msg = "User with id, " + data["id"] + ", has been reactivated on the server"
 
         else:
             msg = "The account for user with id, " + data["id"] + ", is already active"
 
-        return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
+        return user_json.account_status_response_json(bool(result.modified_count), msg)
 
 
 @app.route('/sso_login/')
