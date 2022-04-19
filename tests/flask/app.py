@@ -148,6 +148,7 @@ def deactivate_account():
 
         elif result.modified_count:
             msg = "User with id, " + data["id"] + ", has been deactivated on the server"
+            session["acc_active"] = False
 
         else:
             msg = "The account for user with id, " + data["id"] + ", is already deactivated"
@@ -171,6 +172,7 @@ def reactivate_account():
 
         elif result.modified_count:
             msg = "User with id, " + data["id"] + ", has been reactivated on the server"
+            session["acc_active"] = True
 
         else:
             msg = "The account for user with id, " + data["id"] + ", is already active"
