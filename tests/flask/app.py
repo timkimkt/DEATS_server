@@ -253,6 +253,8 @@ def sso_login():
 def sso_logout():
     logout_url = cas_client.get_logout_url()
     print("logout_url", logout_url)
+    session.pop("id", default=None)
+    session.pop("acc_active", default=None)
 
     return redirect(logout_url)
 
