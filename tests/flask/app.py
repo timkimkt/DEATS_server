@@ -229,7 +229,13 @@ def sso_login():
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             id = str(result_insert.inserted_id)
             phone_num = None
-            
+
+        # save user session
+        session["id"] = id
+
+        # save account active status for easy access later on
+        session["acc_active"] = True
+
         return user_json.sso_login_response_json(True,
                                                  msg,
                                                  id,
