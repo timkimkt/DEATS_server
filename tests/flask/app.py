@@ -103,7 +103,7 @@ def update_account():
                 print("modified: ", succeeded, " number of users")
 
             else:
-                msg = "Request denied. You're not logged in on this device"
+                msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
         else:
@@ -118,7 +118,7 @@ def delete_account():
 
     if data:
         if not session.get("id"):
-            msg = "Request denied. You're not logged in on this device"
+            msg = "Request denied. This device is not logged into the server yet"
             return user_json.request_denied_json_response(msg)
 
         print("data", data)
@@ -140,6 +140,11 @@ def deactivate_account():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
+
+        if not session.get("id"):
+            msg = "Request denied. This device is not logged into the server yet"
+            return user_json.request_denied_json_response(msg)
+        
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": False}}, )
 
@@ -164,6 +169,10 @@ def reactivate_account():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
+
+        if not session.get("id"):
+            msg = "Request denied. This device is not logged into the server yet"
+            return user_json.request_denied_json_response(msg)
 
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": True}}, )
@@ -296,7 +305,7 @@ def order_delivery():
 
             return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
-        msg = "Request denied. You're not logged in on this device"
+        msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
 
@@ -327,7 +336,7 @@ def make_delivery():
 
             return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
 
-        msg = "Request denied. You're not logged in on this device"
+        msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
 
@@ -364,7 +373,7 @@ def get_my_deliverer():
 
                 return user_json.make_get_my_deliverer_response({}, False)
 
-        msg = "Request denied. You're not logged in on this device"
+        msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
 
@@ -396,7 +405,7 @@ def get_order_status():
 
                 return result
 
-        msg = "Request denied. You're not logged in on this device"
+        msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
 
@@ -431,7 +440,7 @@ def match():
             print("modified: ", succeeded, " number of users")
 
         else:
-            msg = "Request denied. You're not logged in on this device"
+            msg = "Request denied. This device is not logged into the server yet"
             return user_json.request_denied_json_response(msg)
 
     return user_json.success_response_json(succeeded, msg)
@@ -468,7 +477,7 @@ def unmatch():
             print("modified: ", succeeded, " number of users")
 
         else:
-            msg = "Request denied. You're not logged in on this device"
+            msg = "Request denied. This device is not logged into the server yet"
             return user_json.request_denied_json_response(msg)
 
     return user_json.success_response_json(succeeded, msg)
@@ -485,7 +494,7 @@ def show_orders():
         print(request.headers['Content-Type'])
         if data["id"]:
             if not session.get("id"):
-                msg = "Request denied. You're not logged in on this device"
+                msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
             cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
@@ -508,7 +517,7 @@ def show_deliveries():
         print(request.headers['Content-Type'])
         if data["id"]:
             if not session.get("id"):
-                msg = "Request denied. You're not logged in on this device"
+                msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
             cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
