@@ -129,7 +129,7 @@ def deactivate_account():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                         {"$set": {"deactivate": data["deactivate_acc"]}}, )
+                                         {"$set": {"acc_active": data["deactivate_acc"]}}, )
         msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
         return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
 

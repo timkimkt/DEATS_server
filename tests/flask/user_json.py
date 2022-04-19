@@ -5,6 +5,7 @@ from datetime import datetime
 
 def create_user_json(email, password, name=None, phone_num=None):
     return {
+        "acc_active": True,
         "email": email,
         "name": name,
         "password": password,
