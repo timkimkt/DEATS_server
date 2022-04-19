@@ -144,7 +144,7 @@ def deactivate_account():
         if not session.get("id"):
             msg = "Request denied. This device is not logged into the server yet"
             return user_json.request_denied_json_response(msg)
-        
+
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": False}}, )
 
@@ -265,6 +265,20 @@ def login():
 
     except ValueError as err:
         return user_json.create_acc_response_json(False, str(err))
+
+
+@app.route('/logout/', methods=['POST'])
+def logout():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        session.pop("id", default=None)
+        session.pop("acc_active", default=None)
+        msg = "You've logged out successfully"
+
+        return user_json.success_response_json(True, msg)
 
 
 @app.route("/show_users/", methods=['GET'])
