@@ -190,7 +190,7 @@ def reactivate_account():
         return user_json.account_status_response_json(bool(result.modified_count), msg)
 
 
-@app.route('/sso_login/')
+@app.route("/sso_login/")
 def sso_login():
     next = request.args.get('next')
     service_ticket = request.args.get("ticket")
@@ -221,7 +221,15 @@ def sso_login():
                                              attributes.get("name"))
 
 
-@app.route('/login/', methods=['POST'])
+@app.route("/sso_logout/")
+def sso_logout():
+    logout_url = cas_client.get_logout_url()
+    print("logout_url", logout_url)
+
+    return redirect(logout_url)
+
+
+@app.route("/login/", methods=['POST'])
 def login():
     data = request.get_json()
     print("data", data)
@@ -267,7 +275,7 @@ def login():
         return user_json.create_acc_response_json(False, str(err))
 
 
-@app.route('/logout/', methods=['POST'])
+@app.route("/logout/", methods=['POST'])
 def logout():
     data = request.get_json()
 
