@@ -114,6 +114,10 @@ def delete_account():
     data = request.get_json()
 
     if data:
+        if not session.get("id"):
+            msg = "Request denied. You're not logged in on this device"
+            return user_json.request_denied_json_response(msg)
+
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.delete_one({"_id": ObjectId(data["id"])})
@@ -438,6 +442,10 @@ def show_orders():
         print("data", data)
         print(request.headers['Content-Type'])
         if data["id"]:
+            if not session.get("id"):
+                msg = "Request denied. You're not logged in on this device"
+                return user_json.request_denied_json_response(msg)
+            
             cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
 
         else:
@@ -457,6 +465,10 @@ def show_deliveries():
         print("data", data)
         print(request.headers['Content-Type'])
         if data["id"]:
+            if not session.get("id"):
+                msg = "Request denied. You're not logged in on this device"
+                return user_json.request_denied_json_response(msg)
+
             cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
 
         else:
