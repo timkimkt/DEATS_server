@@ -129,7 +129,7 @@ def deactivate_account():
         print("data", data)
         print(request.headers['Content-Type'])
         result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                         {"$set": {"acc_active": data["deactivate_acc"]}}, )
+                                     {"$set": {"acc_active": data["deactivate_acc"]}}, )
         msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
         return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
 
@@ -202,6 +202,9 @@ def login():
                     # save user session
                     session["id"] = id
 
+                    # save account active status for easy access later on
+                    session["acc_active"] = user.get("acc_active")
+
         return user_json.login_response_json(succeeded, msg, id, name, phone_num)
 
     except ValueError as err:
@@ -232,6 +235,11 @@ def order_delivery():
         print(request.headers['Content-Type'])
 
         if session.get("id"):
+            # This logic is used to make the server backward compatible
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                return user_json.inactive_acc_json_response()
+
             result = db.orders.insert_one(
                 user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
                                               data["pickup_loc_name"], data["drop_loc_name"]))

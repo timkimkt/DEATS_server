@@ -139,6 +139,14 @@ def deactivate_acc_response_json(succeeded, msg):
     }
 
 
+def inactive_acc_json_response():
+    return {
+        "succeeded": False,
+        "msg": "Request denied. You've deactivated your account. "
+               "You have to reactivate before making this request"
+    }
+
+
 def login_request_response_json():
     return {
         "succeeded": False,
