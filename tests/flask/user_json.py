@@ -131,6 +131,13 @@ def delete_acc_response_json(succeeded, msg):
     }
 
 
+def deactivate_acc_response_json(succeeded, msg):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+    }
+
+
 def login_request_response_json():
     return {
         "succeeded": False,

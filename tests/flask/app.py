@@ -121,6 +121,19 @@ def delete_account():
         return user_json.delete_acc_response_json(True, msg)
 
 
+@app.route("/deactivate_acc/", methods=['POST'])
+def deactivate_account():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+        result = db.users.update_one({"_id": ObjectId(data["id"])},
+                                         {"$set": {"deactivate": data["deactivate_acc"]}}, )
+        msg = "User with id, " + data["id"] + ", has been been deactivated on the server"
+        return user_json.deactivate_acc_response_json(bool(result.modified_count), msg)
+
+
 @app.route('/sso_login/')
 def sso_login():
     next = request.args.get('next')
