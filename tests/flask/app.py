@@ -6,7 +6,7 @@ import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session, url_for
+from flask import Flask, request, session, url_for, jsonify
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -555,7 +555,7 @@ def show_orders():
             cursor = db.orders.find()
             print(cursor)
 
-        return user_json.show_orders_response_json(str(list(cursor)))
+        return user_json.show_orders_response_json(jsonify(list(cursor)))
 
 
 @app.route("/deliveries/", methods=['POST'])
@@ -577,4 +577,4 @@ def show_deliveries():
         else:
             cursor = db.orders.find()
 
-        return user_json.show_deliveries_response_json(str(list(cursor)))
+        return user_json.show_deliveries_response_json(jsonify(list(cursor)))
