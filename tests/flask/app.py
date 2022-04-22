@@ -550,7 +550,7 @@ def show_orders():
                 msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
-            cursor = db.orders.find(user_json.show_orders_json(data["id"]))
+            cursor = db.orders.find(user_json.show_orders_input_json(data["id"]))
 
         else:
             cursor = db.orders.find()
@@ -573,7 +573,7 @@ def show_deliveries():
                 msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
-            cursor = db.orders.find(user_json.show_orders_json(data["id"]))
+            cursor = db.orders.find(user_json.show_deliveries_input_json(data["id"]))
 
         else:
             cursor = db.orders.find()
