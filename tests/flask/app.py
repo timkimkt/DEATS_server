@@ -1,4 +1,5 @@
 import redis
+from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
 
@@ -555,7 +556,7 @@ def show_orders():
             cursor = db.orders.find()
             print(cursor)
 
-        return user_json.show_orders_response_json(jsonify(list(cursor)))
+        return json_util.dumps(user_json.show_orders_response_json(cursor))
 
 
 @app.route("/deliveries/", methods=['POST'])
@@ -577,4 +578,4 @@ def show_deliveries():
         else:
             cursor = db.orders.find()
 
-        return user_json.show_deliveries_response_json(jsonify(list(cursor)))
+        return json_util.dumps(user_json.show_deliveries_response_json(cursor))
