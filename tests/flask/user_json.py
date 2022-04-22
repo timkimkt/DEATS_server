@@ -69,7 +69,7 @@ def show_orders_input_json(user_id):
 
 def show_deliveries_input_json(user_id):
     return {
-        "delivery_id": user_id,
+        "deliverer_id": user_id,
     }
 
 
