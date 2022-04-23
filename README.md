@@ -21,7 +21,7 @@ The DEATS app server runs on Flask's web framework and uses MongoDB Atlas for it
 
 - **Note**: Only developers can remotely deploy new edits to the official or D&T hosting address.  
 
-#### Intial Setup
+#### Initial Setup
 1. The server is written mainly in Python so be sure the latest version of [Python](https://nodejs.org/en/download/) is installed on your computer.
 2. Ensure the latest version of [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) is installed. 
 3. `Create and cd into the root folder` you wish to use for this project.
@@ -62,7 +62,35 @@ git commit -am "<commit message>"
 
 
 ## API Reference
-#### POST Methods
+
+### GET Methods
+###### /sso_login
+>- Description: Endpoint for logging a user in through Dartmouth SSO.
+>- Input: No input required
+    
+>- Output: Returns the following JSON object.
+        {
+            "succeeded": succeeded,
+            "msg": msg,
+            "user_id": user_id,
+            "is_new_login": is_new_login,
+            "authentication_date": authentication_date,
+            "user_info":
+                {
+                    "id": id,
+                    "email": net_id_email,
+                    "name": name,
+                    "phone_num": phone_num,
+                }
+        }
+
+###### /sso_logout
+>- Description: Endpoint for logging out a user through Dartmouth SSO.
+>- Input: No input required
+    
+>- Output: No output
+
+### POST Methods
 ###### /create_acc
 >- Description: Endpoint for creating an account for a new user.
 >- Input: Accepts the following JSON object.
@@ -106,6 +134,32 @@ git commit -am "<commit message>"
             "msg": msg
         }
 
+###### /deactivate_acc
+>- Description: Endpoint for deactivating an existing account.
+>- Input: Accepts the following JSON object.
+        {
+            "id": <id>
+        }
+    
+>- Output: Returns the following JSON object.
+        {
+            "succeeded": succeeded,
+            "msg": msg
+        }
+
+###### /reactivate_acc
+>- Description: Endpoint for reactivating a deactivated account.
+>- Input: Accepts the following JSON object.
+        {
+            "id": <id>
+        }
+    
+>- Output: Returns the following JSON object.
+        {
+            "succeeded": succeeded,
+            "msg": msg
+        }
+
 ###### /login
 >- Description: Endpoint for logging a user in.
 >- Input: Accepts the following JSON object.
@@ -121,6 +175,19 @@ git commit -am "<commit message>"
             "id": id,
             "name": name,
             "phone_num": phone_num
+        }
+
+###### /logout
+>- Description: Endpoint for logging a user out.
+>- Input: Accepts the following JSON object.
+        {
+            "id": <id>
+        }
+    
+>- Output: Returns the following JSON object.
+        {
+            "succeeded": succeeded,
+            "msg": msg
         }
 
 ###### /order_del
@@ -221,6 +288,17 @@ git commit -am "<commit message>"
             "orders": orders"
         }
 
+###### /deliveries
+>- Description: Endpoint for viewing all deliveries made by a user.
+>- Input: Accepts the following JSON object.
+        {
+            "id": <id>
+        }
+    
+>- Output: Returns the following JSON object.
+        {
+            "deliveries": deliveries
+        }
 ###### /deliveries
 >- Description: Endpoint for viewing all deliveries made by a user.
 >- Input: Accepts the following JSON object.
