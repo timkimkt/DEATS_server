@@ -1,4 +1,5 @@
 import redis
+from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
 
@@ -6,7 +7,7 @@ import tests.flask.user_json as user_json
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session, url_for
+from flask import Flask, request, session, url_for, jsonify
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -549,13 +550,13 @@ def show_orders():
                 msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
-            cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
+            cursor = db.orders.find(user_json.show_orders_input_json(data["id"]))
 
         else:
             cursor = db.orders.find()
             print(cursor)
 
-        return user_json.show_orders_response_json(str(list(cursor)))
+        return json_util.dumps(user_json.show_orders_response_json(cursor))
 
 
 @app.route("/deliveries/", methods=['POST'])
@@ -572,9 +573,9 @@ def show_deliveries():
                 msg = "Request denied. This device is not logged into the server yet"
                 return user_json.request_denied_json_response(msg)
 
-            cursor = db.orders.find(user_json.show_orders_json(ObjectId(data["id"])))
+            cursor = db.orders.find(user_json.show_deliveries_input_json(data["id"]))
 
         else:
             cursor = db.orders.find()
 
-        return user_json.show_deliveries_response_json(str(list(cursor)))
+        return json_util.dumps(user_json.show_deliveries_response_json(cursor))

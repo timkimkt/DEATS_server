@@ -61,15 +61,15 @@ def match_order_json(order_id):
     }
 
 
-def show_orders_json(user_id):
+def show_orders_input_json(user_id):
     return {
         "customer_id": user_id,
     }
 
 
-def show_deliveries_json(user_id):
+def show_deliveries_input_json(user_id):
     return {
-        "delivery_id": user_id,
+        "deliverer_id": user_id,
     }
 
 
