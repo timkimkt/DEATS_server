@@ -149,7 +149,7 @@ def deactivate_account():
         result = db.users.update_one({"_id": ObjectId(data["id"])},
                                      {"$set": {"acc_active": False}}, )
 
-        print("reactivate_acc result:", result.raw_result)
+        print("deactivate_acc result:", result.raw_result)
         if not result.matched_count:
             msg = "The account with id, " + data["id"] + ", does not exist on the server"
 
