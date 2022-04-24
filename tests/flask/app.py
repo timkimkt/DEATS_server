@@ -353,13 +353,41 @@ def order_delivery():
 
             result = db.orders.insert_one(
                 user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
-                                              data["pickup_loc_name"], data["drop_loc_name"]))
+                                              data["pickup_loc_name"], data["drop_loc_name"], data.get("GET_code")))
             print("modified: ", result.inserted_id, " number of customers")
 
             return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
+
+
+@app.route("/update_order/", methods=['POST'])
+def update_order():
+    data = request.get_json()
+
+    if data:
+        print("data", data)
+        print(request.headers['Content-Type'])
+
+        if session.get("id"):
+            print(session.get("acc_active"))
+            if session.get("acc_active") is not None and session.get("acc_active") is False:
+                msg = "Request denied. You've deactivated your account " \
+                      "You have to reactivate before making this request"
+                return user_json.request_denied_json_response(msg)
+
+            succeeded = 0
+            for key, value in data.items():
+                print("key: ", key, " value: ", value)
+                if value and key != "id" and key != "order_id":
+                    result = db.orders.update_one({"_id": ObjectId(data["order_id"]), key: {"$exists": True}},
+                                                  {"$set": {key: value}})
+
+                    succeeded = max(succeeded, result.modified_count)
+
+            msg = "The user's order has been updated" if succeeded else "The request was not completed"
+            return user_json.success_response_json(bool(succeeded), msg)
 
 
 @app.route("/make_del/", methods=['POST'])
