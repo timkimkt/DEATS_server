@@ -88,6 +88,7 @@ def create_account(args):
 
 
 @app.route("/update_acc/", methods=['POST'])
+@use_args(ManipulateAccSchema())
 def update_account():
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
@@ -121,6 +122,7 @@ def update_account():
 
 
 @app.route("/delete_acc/", methods=['POST'])
+@use_args(ManipulateAccSchema())
 def delete_account():
     data = request.get_json()
 
@@ -142,6 +144,7 @@ def delete_account():
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
+@use_args(ManipulateAccSchema())
 def deactivate_account():
     data = request.get_json()
 
@@ -171,6 +174,7 @@ def deactivate_account():
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
+@use_args(ManipulateAccSchema())
 def reactivate_account():
     data = request.get_json()
 
@@ -268,6 +272,7 @@ def sso_logout():
 
 
 @app.route("/login/", methods=['POST'])
+@use_args(LoginSchema())
 def login():
     data = request.get_json()
     print("data", data)
@@ -343,6 +348,7 @@ def global_count():
 
 
 @app.route("/order_del/", methods=['POST'])
+@use_args(OrderDelSchema())
 def order_delivery():
     data = request.get_json()
 
@@ -370,6 +376,7 @@ def order_delivery():
 
 
 @app.route("/update_order/", methods=['POST'])
+@use_args(UpdateOrderSchema())
 def update_order():
     data = request.get_json()
 
@@ -398,6 +405,7 @@ def update_order():
 
 
 @app.route("/make_del/", methods=['POST'])
+@use_args(MakeDelSchema())
 def make_delivery():
     data = request.get_json()
 
@@ -429,6 +437,7 @@ def make_delivery():
 
 
 @app.route("/my_deliverer/", methods=['POST'])
+@use_args(MatchUnmatchOrderInfo())
 def get_my_deliverer():
     data = request.get_json()
 
@@ -466,6 +475,7 @@ def get_my_deliverer():
 
 
 @app.route("/order_status/", methods=['POST'])
+@use_args(MatchUnmatchOrderInfo())
 def get_order_status():
     data = request.get_json()
 
@@ -498,6 +508,7 @@ def get_order_status():
 
 
 @app.route("/match/", methods=['POST'])
+@use_args(MatchUnmatchOrderInfo())
 def match():
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
@@ -535,6 +546,7 @@ def match():
 
 
 @app.route("/unmatch/", methods=['POST'])
+@use_args(MatchUnmatchOrderInfo())
 def unmatch():
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
@@ -572,6 +584,7 @@ def unmatch():
 
 
 @app.route("/orders/", methods=['POST'])
+@use_args(OrdersDeliveriesSchema())
 def show_orders():
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
@@ -595,6 +608,7 @@ def show_orders():
 
 
 @app.route("/deliveries/", methods=['POST'])
+@use_args(OrdersDeliveriesSchema())
 def show_deliveries():
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
