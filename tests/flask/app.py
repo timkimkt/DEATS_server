@@ -614,3 +614,15 @@ def show_deliveries():
             cursor = db.orders.find()
 
         return json_util.dumps(user_json.show_deliveries_response_json(cursor))
+
+
+# Return data validation errors as a JSON object
+@app.errorhandler(422)
+@app.errorhandler(400)
+def handle_error(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    if headers:
+        return {"data_validation_errors": messages}, err.code, headers
+    else:
+        return {"data_validation_errors": messages}, err.code
