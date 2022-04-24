@@ -199,12 +199,32 @@ git commit -am "<commit message>"
             "pickup_loc_name": <pickup_loc_name>,
             "drop_loc": <drop_loc>,
             "drop_loc_name": <drop_loc_name>
+            "GET_code": <GET_code> *Optional*
         }
     
 >- Output: Returns the following JSON object.
         {
             "succeeded": succeeded,
             "order_id": order_id
+        }
+
+> ###### /update_order
+>- Description: Endpoint for updating any of the details of an existing order. Updates can be done in bulk or NOT.
+   Just POST the keys and the new values to update them with. Updates are idempotent.
+>- Input: Accepts any combination of the keys in the following JSON object.
+        {
+            "id": <id>, 
+            "pickup_loc": <password>, 
+            "pickup_loc_name": <pickup_loc_name>,
+            "drop_loc": <drop_loc>,
+            "drop_loc_name": <drop_loc_name>
+            "GET_code": <GET_code>
+        }
+    
+>- Output: Returns the following JSON object.
+        {
+            "succeeded": succeeded,
+            "msg": msg
         }
         
 ###### /make_del
