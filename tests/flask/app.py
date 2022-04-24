@@ -377,7 +377,7 @@ def update_order():
                       "You have to reactivate before making this request"
                 return user_json.request_denied_json_response(msg)
 
-            succeeded = False
+            succeeded = 0
             for key, value in data.items():
                 print("key: ", key, " value: ", value)
                 if value and key != "id" and key != "order_id":
@@ -387,7 +387,7 @@ def update_order():
                     succeeded = max(succeeded, result.modified_count)
 
             msg = "The user's order has been updated" if succeeded else "The request was not completed"
-            return user_json.success_response_json(succeeded, msg)
+            return user_json.success_response_json(bool(succeeded), msg)
 
 
 @app.route("/make_del/", methods=['POST'])
