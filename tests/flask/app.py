@@ -14,6 +14,11 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
+from marshmallow import Schema, fields
+from webargs.flaskparser import use_args
+from tests.flask.schemas import CreateAccSchema, ManipulateAccSchema, LoginSchema, OrderDelSchema, \
+    UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
+
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
@@ -42,8 +47,10 @@ def index():
 
 
 @app.route("/create_acc/", methods=['POST'])
-def create_account():
+@use_args(CreateAccSchema())
+def create_account(args):
     data = request.get_json()
+    print(args)
 
     if data:
         print("data", data)
