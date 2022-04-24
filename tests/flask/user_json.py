@@ -26,7 +26,7 @@ def create_user_json(email=None, password=None, name=None, phone_num=None):
 # don't need active status: indicated by being put in the order status
 # don't need user type: all orders are requested by a customer
 # need status: C (completed), W (waiting), M (matched), F (food picked up) to keep track of order and delivery status
-def order_delivery_json(customer_id, pickup_loc, drop_loc, pickup_loc_name, drop_loc_name):
+def order_delivery_json(customer_id, pickup_loc, drop_loc, pickup_loc_name, drop_loc_name, get_code):
     return {
         "customer_id": customer_id,
         "deliverer_id": None,
@@ -34,6 +34,7 @@ def order_delivery_json(customer_id, pickup_loc, drop_loc, pickup_loc_name, drop
         "drop_loc": drop_loc,
         "pickup_loc_name": pickup_loc_name,
         "drop_loc_name": drop_loc_name,
+        "GET_code": get_code,
         "order_date": datetime.fromtimestamp(time.time()),
         "order_status": "W"
     }
