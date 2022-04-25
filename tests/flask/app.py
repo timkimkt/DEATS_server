@@ -121,31 +121,25 @@ def delete_account(args):
 @app.route("/deactivate_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def deactivate_account(args):
-    data = request.get_json()
+    if not session.get("id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+    result = db.users.update_one({"_id": ObjectId(args["id"])},
+                                 {"$set": {"acc_active": False}}, )
 
-        if not session.get("id"):
-            msg = "Request denied. This device is not logged into the server yet"
-            return user_json.request_denied_json_response(msg)
+    print("deactivate_acc result:", result.raw_result)
+    if not result.matched_count:
+        msg = "The account with id, " + args["id"] + ", does not exist on the server"
 
-        result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                     {"$set": {"acc_active": False}}, )
+    elif result.modified_count:
+        msg = "User with id, " + args["id"] + ", has been deactivated on the server"
+        session["acc_active"] = False
 
-        print("deactivate_acc result:", result.raw_result)
-        if not result.matched_count:
-            msg = "The account with id, " + data["id"] + ", does not exist on the server"
+    else:
+        msg = "The account for user with id, " + args["id"] + ", is already deactivated"
 
-        elif result.modified_count:
-            msg = "User with id, " + data["id"] + ", has been deactivated on the server"
-            session["acc_active"] = False
-
-        else:
-            msg = "The account for user with id, " + data["id"] + ", is already deactivated"
-
-        return user_json.account_status_response_json(bool(result.modified_count), msg)
+    return user_json.account_status_response_json(bool(result.modified_count), msg)
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
