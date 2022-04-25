@@ -11,6 +11,8 @@ class CreateAccSchema(Schema):
 
 class ManipulateAccSchema(Schema):
     user_id = fields.Str(required=True)
+    name = fields.Str(load_only=True)
+    phone_num = fields.Str(load_only=True)
 
 
 class LoginSchema(Schema):

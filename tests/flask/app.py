@@ -81,35 +81,24 @@ def create_account(args):
 @app.route("/update_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def update_account(args):
-    data = request.get_json()
-    msg = "Absent JSON data. Provide a valid JSON data"
-    succeeded = False
+    if session.get("id"):
+        user_id = args["id"]
+        del args["id"]
+        succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
+                                             {"$set": args}).modified_count)
 
-    if data:
-        if data["id"]:
-
-            if session.get("id"):
-                user_id = data["id"]
-                del data["id"]
-                succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
-                                                     {"$set": data}).modified_count)
-
-                if succeeded:
-                    msg = "The user's info has been updated successfully"
-
-                else:
-                    msg = "The user's info wasn't updated. The change already exist"
-
-                print("modified: ", succeeded, " number of users")
-
-            else:
-                msg = "Request denied. This device is not logged into the server yet"
-                return user_json.request_denied_json_response(msg)
+        if succeeded:
+            msg = "The user's info has been updated successfully"
 
         else:
-            msg = "No user id provided. The server needs to know the id of the user who's info you want to update"
+            msg = "The user's info wasn't updated. The change already exist"
 
-    return user_json.success_response_json(succeeded, msg)
+        print("modified: ", succeeded, " number of users")
+        return user_json.success_response_json(succeeded, msg)
+
+    else:
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/delete_acc/", methods=['POST'])
