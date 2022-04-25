@@ -67,7 +67,7 @@ def create_account(args):
             msg = "User deets are now on the server"
 
             # save user session
-            session["id"] = str(result.inserted_id)
+            session["user_id"] = str(result.inserted_id)
 
             # save account active status for easy access later on
             session["acc_active"] = True
@@ -81,9 +81,9 @@ def create_account(args):
 @app.route("/update_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def update_account(args):
-    if session.get("id"):
-        user_id = args["id"]
-        del args["id"]
+    if session.get("user_id"):
+        user_id = args["user_id"]
+        del args["user_id"]
         succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
                                              {"$set": args}).modified_count)
 
@@ -104,40 +104,40 @@ def update_account(args):
 @app.route("/delete_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def delete_account(args):
-    if not session.get("id"):
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.delete_one({"_id": ObjectId(args["id"])})
+    result = db.users.delete_one({"_id": ObjectId(args["user_id"])})
     if result.deleted_count:
-        msg = "User with id, " + args["id"] + ", has been removed from the server"
-        session.pop("id", default=None)
+        msg = "User with id, " + args["user_id"] + ", has been removed from the server"
+        session.pop("user_id", default=None)
 
     else:
-        msg = "Request unsuccessful. No user with id, " + args["id"] + ", exists on the server"
+        msg = "Request unsuccessful. No user with id, " + args["user_id"] + ", exists on the server"
     return user_json.delete_acc_response_json(bool(result.deleted_count), msg)
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def deactivate_account(args):
-    if not session.get("id"):
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.update_one({"_id": ObjectId(args["id"])},
+    result = db.users.update_one({"_id": ObjectId(args["user_id"])},
                                  {"$set": {"acc_active": False}}, )
 
     print("deactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + args["id"] + ", does not exist on the server"
+        msg = "The account with id, " + args["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + args["id"] + ", has been deactivated on the server"
+        msg = "User with id, " + args["user_id"] + ", has been deactivated on the server"
         session["acc_active"] = False
 
     else:
-        msg = "The account for user with id, " + args["id"] + ", is already deactivated"
+        msg = "The account for user with id, " + args["user_id"] + ", is already deactivated"
 
     return user_json.account_status_response_json(bool(result.modified_count), msg)
 
@@ -145,22 +145,22 @@ def deactivate_account(args):
 @app.route("/reactivate_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def reactivate_account(args):
-    if not session.get("id"):
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.update_one({"_id": ObjectId(args["id"])},
+    result = db.users.update_one({"_id": ObjectId(args["user_id"])},
                                  {"$set": {"acc_active": True}}, )
     print("reactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + args["id"] + ", does not exist on the server"
+        msg = "The account with id, " + args["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + args["id"] + ", has been reactivated on the server"
+        msg = "User with id, " + args["user_id"] + ", has been reactivated on the server"
         session["acc_active"] = True
 
     else:
-        msg = "The account for user with id, " + args["id"] + ", is already active"
+        msg = "The account for user with id, " + args["user_id"] + ", is already active"
 
     return user_json.account_status_response_json(bool(result.modified_count), msg)
 
@@ -211,7 +211,7 @@ def sso_login():
             session["acc_active"] = True
 
         # save user session
-        session["id"] = id
+        session["user_id"] = id
 
         return user_json.sso_login_response_json(True,
                                                  msg,
@@ -228,7 +228,7 @@ def sso_login():
 def sso_logout():
     logout_url = cas_client.get_logout_url()
     print("logout_url", logout_url)
-    session.pop("id", default=None)
+    session.pop("user_id", default=None)
     session.pop("acc_active", default=None)
 
     return redirect(logout_url)
@@ -239,7 +239,7 @@ def sso_logout():
 def login(args):
     succeeded = False
     msg = "Empty credentials"
-    id = None
+    user_id = None
     name = None
     phone_num = None
 
@@ -261,17 +261,17 @@ def login(args):
                     print(user)
                     succeeded = True
                     msg = "Yayy, the user exists!"
-                    id = str(user["_id"])
+                    user_id = str(user["_id"])
                     name = user["name"]
                     phone_num = user["phone_num"]
 
                     # save user session
-                    session["id"] = id
+                    session["user_id"] = user_id
 
                     # save account active status for easy access later on
                     session["acc_active"] = user.get("acc_active")
 
-        return user_json.login_response_json(succeeded, msg, id, name, phone_num)
+        return user_json.login_response_json(succeeded, msg, user_id, name, phone_num)
 
     except ValueError as err:
         return user_json.create_acc_response_json(False, str(err))
@@ -284,7 +284,7 @@ def logout():
     if data:
         print("data", data)
         print(request.headers['Content-Type'])
-        session.pop("id", default=None)
+        session.pop("user_id", default=None)
         session.pop("acc_active", default=None)
         msg = "You've logged out successfully"
 
@@ -309,7 +309,7 @@ def global_count():
 @app.route("/order_del/", methods=['POST'])
 @use_args(OrderDelSchema())
 def order_delivery(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -318,7 +318,7 @@ def order_delivery(args):
             return user_json.request_denied_json_response(msg)
 
         result = db.orders.insert_one(
-            user_json.order_delivery_json(args["id"], args["pickup_loc"], args["drop_loc"],
+            user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"],
                                           args["pickup_loc_name"], args["drop_loc_name"], args.get("GET_code")))
         print("modified: ", result.inserted_id, " number of customers")
 
@@ -331,7 +331,7 @@ def order_delivery(args):
 @app.route("/update_order/", methods=['POST'])
 @use_args(UpdateOrderSchema())
 def update_order(args):
-    if session.get("id"):
+    if session.get("user_id"):
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
             msg = "Request denied. You've deactivated your account " \
@@ -341,7 +341,7 @@ def update_order(args):
         succeeded = 0
         for key, value in args.items():
             print("key: ", key, " value: ", value)
-            if value and key != "id" and key != "order_id":
+            if value and key != "user_id" and key != "order_id":
                 result = db.orders.update_one({"_id": ObjectId(args["order_id"]), key: {"$exists": True}},
                                               {"$set": {key: value}})
 
@@ -354,7 +354,7 @@ def update_order(args):
 @app.route("/make_del/", methods=['POST'])
 @use_args(MakeDelSchema())
 def make_delivery(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -362,7 +362,7 @@ def make_delivery(args):
                   "You have to reactivate before making this request"
             return user_json.request_denied_json_response(msg)
 
-        result = db.users.update_one({"_id": ObjectId(args["id"])},
+        result = db.users.update_one({"_id": ObjectId(args["user_id"])},
                                      {"$set": user_json.make_delivery_json(args["final_des"])}, )
         print("modified: ", result.modified_count, " number of deliverers")
 
@@ -380,7 +380,7 @@ def make_delivery(args):
 @app.route("/my_deliverer/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def get_my_deliverer(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -412,7 +412,7 @@ def get_my_deliverer(args):
 @app.route("/order_status/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def get_order_status(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -439,7 +439,7 @@ def get_order_status(args):
 @app.route("/match/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def match(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -448,7 +448,7 @@ def match(args):
             return user_json.request_denied_json_response(msg)
 
         succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
-                                         {"$set": user_json.match_customer_json(args["id"])}, ).modified_count
+                                         {"$set": user_json.match_customer_json(args["user_id"])}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
         if succeeded:
@@ -469,7 +469,7 @@ def match(args):
 @app.route("/unmatch/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def unmatch(args):
-    if session.get("id"):
+    if session.get("user_id"):
         # This logic is used to make the server backward compatible
         print(session.get("acc_active"))
         if session.get("acc_active") is not None and session.get("acc_active") is False:
@@ -499,11 +499,11 @@ def unmatch(args):
 @app.route("/orders/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
 def show_orders(args):
-    if not session.get("id"):
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    cursor = db.orders.find(user_json.show_orders_input_json(args["id"]))
+    cursor = db.orders.find(user_json.show_orders_input_json(args["user_id"]))
 
     return json_util.dumps(user_json.show_orders_response_json(cursor))
 
@@ -511,11 +511,11 @@ def show_orders(args):
 @app.route("/deliveries/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
 def show_deliveries(args):
-    if not session.get("id"):
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    cursor = db.orders.find(user_json.show_deliveries_input_json(args["id"]))
+    cursor = db.orders.find(user_json.show_deliveries_input_json(args["user_id"]))
 
     return json_util.dumps(user_json.show_deliveries_response_json(cursor))
 
