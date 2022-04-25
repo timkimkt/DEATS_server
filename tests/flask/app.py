@@ -104,23 +104,18 @@ def update_account(args):
 @app.route("/delete_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
 def delete_account(args):
-    data = request.get_json()
+    if not session.get("id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
-    if data:
-        if not session.get("id"):
-            msg = "Request denied. This device is not logged into the server yet"
-            return user_json.request_denied_json_response(msg)
+    result = db.users.delete_one({"_id": ObjectId(args["id"])})
+    if result.deleted_count:
+        msg = "User with id, " + args["id"] + ", has been removed from the server"
+        session.pop("id", default=None)
 
-        print("data", data)
-        print(request.headers['Content-Type'])
-        result = db.users.delete_one({"_id": ObjectId(data["id"])})
-        if result.deleted_count:
-            msg = "User with id, " + data["id"] + ", has been removed from the server"
-            session.pop("id", default=None)
-
-        else:
-            msg = "Request unsuccessful. No user with id, " + data["id"] + ", exists on the server"
-        return user_json.delete_acc_response_json(bool(result.deleted_count), msg)
+    else:
+        msg = "Request unsuccessful. No user with id, " + args["id"] + ", exists on the server"
+    return user_json.delete_acc_response_json(bool(result.deleted_count), msg)
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
