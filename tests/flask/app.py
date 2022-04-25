@@ -466,43 +466,34 @@ def match(args):
         return user_json.request_denied_json_response(msg)
 
 
-
 @app.route("/unmatch/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def unmatch(args):
-    data = request.get_json()
-    msg = "Absent JSON data. Provide a valid JSON data"
-    succeeded = False
-
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
-
-        if session.get("id"):
-            # This logic is used to make the server backward compatible
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
-
-            succeeded = db.users.update_one(user_json.match_order_json(ObjectId(data["customer_id"])),
-                                            {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
-            print("modified: ", succeeded, " number of customers")
-
-            if succeeded:
-                msg = "Request completed. User has been unmatched"
-
-            else:
-                msg = "Request not completed. User has already been unmatched"
-
-            print("modified: ", succeeded, " number of users")
-
-        else:
-            msg = "Request denied. This device is not logged into the server yet"
+    if session.get("id"):
+        # This logic is used to make the server backward compatible
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
             return user_json.request_denied_json_response(msg)
 
-    return user_json.success_response_json(succeeded, msg)
+        succeeded = db.users.update_one(user_json.match_order_json(ObjectId(args["customer_id"])),
+                                        {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
+        print("modified: ", succeeded, " number of customers")
+
+        if succeeded:
+            msg = "Request completed. User has been unmatched"
+
+        else:
+            msg = "Request not completed. User has already been unmatched"
+
+        print("modified: ", succeeded, " number of users")
+
+        return user_json.success_response_json(succeeded, msg)
+
+    else:
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
 
 @app.route("/orders/", methods=['POST'])
