@@ -29,7 +29,7 @@ class OrderDelSchema(Schema):
 
 class UpdateOrderSchema(Schema):
     user_id = fields.Int(required=True)
-    pickup_loc = fields.Str(required=True)
+    pickup_loc = fields.Str(load_only=True)
     drop_loc = fields.Str(load_only=True)
     GET_code = fields.DateTime(load_only=True)
 

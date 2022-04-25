@@ -331,30 +331,24 @@ def order_delivery(args):
 @app.route("/update_order/", methods=['POST'])
 @use_args(UpdateOrderSchema())
 def update_order(args):
-    data = request.get_json()
+    if session.get("id"):
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
+            return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        succeeded = 0
+        for key, value in args.items():
+            print("key: ", key, " value: ", value)
+            if value and key != "id" and key != "order_id":
+                result = db.orders.update_one({"_id": ObjectId(args["order_id"]), key: {"$exists": True}},
+                                              {"$set": {key: value}})
 
-        if session.get("id"):
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
+                succeeded = max(succeeded, result.modified_count)
 
-            succeeded = 0
-            for key, value in data.items():
-                print("key: ", key, " value: ", value)
-                if value and key != "id" and key != "order_id":
-                    result = db.orders.update_one({"_id": ObjectId(data["order_id"]), key: {"$exists": True}},
-                                                  {"$set": {key: value}})
-
-                    succeeded = max(succeeded, result.modified_count)
-
-            msg = "The user's order has been updated" if succeeded else "The request was not completed"
-            return user_json.success_response_json(bool(succeeded), msg)
+        msg = "The user's order has been updated" if succeeded else "The request was not completed"
+        return user_json.success_response_json(bool(succeeded), msg)
 
 
 @app.route("/make_del/", methods=['POST'])
