@@ -412,34 +412,28 @@ def get_my_deliverer(args):
 @app.route("/order_status/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def get_order_status(args):
-    data = request.get_json()
+    if session.get("id"):
+        # This logic is used to make the server backward compatible
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
+            return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        if args["order_id"]:
+            result = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"order_status": 1, "_id": 0})
 
-        if session.get("id"):
-            # This logic is used to make the server backward compatible
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
+            if result:
+                user_json.make_get_order_status_response(result, True)
 
-            if data["order_id"]:
-                result = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"order_status": 1, "_id": 0})
+            else:
+                result = {}
+                user_json.make_get_order_status_response(result, False)
 
-                if result:
-                    user_json.make_get_order_status_response(result, True)
+            return result
 
-                else:
-                    result = {}
-                    user_json.make_get_order_status_response(result, False)
-
-                return result
-
-        msg = "Request denied. This device is not logged into the server yet"
-        return user_json.request_denied_json_response(msg)
+    msg = "Request denied. This device is not logged into the server yet"
+    return user_json.request_denied_json_response(msg)
 
 
 @app.route("/match/", methods=['POST'])
