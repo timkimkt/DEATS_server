@@ -14,7 +14,6 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
-from marshmallow import Schema, fields
 from webargs.flaskparser import use_args
 from tests.flask.schemas import CreateAccSchema, ManipulateAccSchema, LoginSchema, OrderDelSchema, \
     UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
@@ -89,7 +88,7 @@ def create_account(args):
 
 @app.route("/update_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
-def update_account():
+def update_account(args):
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
     succeeded = False
@@ -123,7 +122,7 @@ def update_account():
 
 @app.route("/delete_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
-def delete_account():
+def delete_account(args):
     data = request.get_json()
 
     if data:
@@ -145,7 +144,7 @@ def delete_account():
 
 @app.route("/deactivate_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
-def deactivate_account():
+def deactivate_account(args):
     data = request.get_json()
 
     if data:
@@ -175,7 +174,7 @@ def deactivate_account():
 
 @app.route("/reactivate_acc/", methods=['POST'])
 @use_args(ManipulateAccSchema())
-def reactivate_account():
+def reactivate_account(args):
     data = request.get_json()
 
     if data:
@@ -273,7 +272,7 @@ def sso_logout():
 
 @app.route("/login/", methods=['POST'])
 @use_args(LoginSchema())
-def login():
+def login(args):
     data = request.get_json()
     print("data", data)
     print(request.headers['Content-Type'])
@@ -349,7 +348,7 @@ def global_count():
 
 @app.route("/order_del/", methods=['POST'])
 @use_args(OrderDelSchema())
-def order_delivery():
+def order_delivery(args):
     data = request.get_json()
 
     if data:
@@ -377,7 +376,7 @@ def order_delivery():
 
 @app.route("/update_order/", methods=['POST'])
 @use_args(UpdateOrderSchema())
-def update_order():
+def update_order(args):
     data = request.get_json()
 
     if data:
@@ -406,7 +405,7 @@ def update_order():
 
 @app.route("/make_del/", methods=['POST'])
 @use_args(MakeDelSchema())
-def make_delivery():
+def make_delivery(args):
     data = request.get_json()
 
     if data:
@@ -438,7 +437,7 @@ def make_delivery():
 
 @app.route("/my_deliverer/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
-def get_my_deliverer():
+def get_my_deliverer(args):
     data = request.get_json()
 
     if data:
@@ -476,7 +475,7 @@ def get_my_deliverer():
 
 @app.route("/order_status/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
-def get_order_status():
+def get_order_status(args):
     data = request.get_json()
 
     if data:
@@ -509,7 +508,7 @@ def get_order_status():
 
 @app.route("/match/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
-def match():
+def match(args):
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
     succeeded = False
@@ -547,7 +546,7 @@ def match():
 
 @app.route("/unmatch/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
-def unmatch():
+def unmatch(args):
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
     succeeded = False
@@ -585,7 +584,7 @@ def unmatch():
 
 @app.route("/orders/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
-def show_orders():
+def show_orders(args):
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
     succeeded = False
@@ -609,7 +608,7 @@ def show_orders():
 
 @app.route("/deliveries/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
-def show_deliveries():
+def show_deliveries(args):
     data = request.get_json()
     msg = "Absent JSON data. Provide a valid JSON data"
     succeeded = False
