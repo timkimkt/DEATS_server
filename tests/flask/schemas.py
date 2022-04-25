@@ -36,9 +36,9 @@ class UpdateOrderSchema(Schema):
 
 class MakeDelSchema(Schema):
     user_id = fields.Str(required=True)
-    start_point = fields.Str(required=True)
-    destination = fields.Str(required=True)
-    num_deliveries = fields.Int(required=True)
+    start_point = fields.Field(required=True)
+    destination = fields.Field(required=True)
+    num_deliveries = fields.Int(Missing=999)
 
 
 class MatchUnmatchOrderInfo(Schema):

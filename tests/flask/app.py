@@ -354,33 +354,27 @@ def update_order(args):
 @app.route("/make_del/", methods=['POST'])
 @use_args(MakeDelSchema())
 def make_delivery(args):
-    data = request.get_json()
+    if session.get("id"):
+        # This logic is used to make the server backward compatible
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
+            return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        result = db.users.update_one({"_id": ObjectId(args["id"])},
+                                     {"$set": user_json.make_delivery_json(args["final_des"])}, )
+        print("modified: ", result.modified_count, " number of deliverers")
 
-        if session.get("id"):
-            # This logic is used to make the server backward compatible
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
+        customer_finder = CustomerFinder(args["final_des"],
+                                         db.orders.find(user_json.find_order_json()))
 
-            result = db.users.update_one({"_id": ObjectId(data["id"])},
-                                         {"$set": user_json.make_delivery_json(data["final_des"])}, )
-            print("modified: ", result.modified_count, " number of deliverers")
+        customer_finder.sort_customers()
 
-            customer_finder = CustomerFinder(data["final_des"],
-                                             db.orders.find(user_json.find_order_json()))
+        return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(args["num_deliveries"]))
 
-            customer_finder.sort_customers()
-
-            return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(data["num"]))
-
-        msg = "Request denied. This device is not logged into the server yet"
-        return user_json.request_denied_json_response(msg)
+    msg = "Request denied. This device is not logged into the server yet"
+    return user_json.request_denied_json_response(msg)
 
 
 @app.route("/my_deliverer/", methods=['POST'])
