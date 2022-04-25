@@ -499,48 +499,25 @@ def unmatch(args):
 @app.route("/orders/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
 def show_orders(args):
-    data = request.get_json()
-    msg = "Absent JSON data. Provide a valid JSON data"
-    succeeded = False
+    if not session.get("id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
-        if data["id"]:
-            if not session.get("id"):
-                msg = "Request denied. This device is not logged into the server yet"
-                return user_json.request_denied_json_response(msg)
+    cursor = db.orders.find(user_json.show_orders_input_json(args["id"]))
 
-            cursor = db.orders.find(user_json.show_orders_input_json(data["id"]))
-
-        else:
-            cursor = db.orders.find()
-            print(cursor)
-
-        return json_util.dumps(user_json.show_orders_response_json(cursor))
+    return json_util.dumps(user_json.show_orders_response_json(cursor))
 
 
 @app.route("/deliveries/", methods=['POST'])
 @use_args(OrdersDeliveriesSchema())
 def show_deliveries(args):
-    data = request.get_json()
-    msg = "Absent JSON data. Provide a valid JSON data"
-    succeeded = False
+    if not session.get("id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
-        if data["id"]:
-            if not session.get("id"):
-                msg = "Request denied. This device is not logged into the server yet"
-                return user_json.request_denied_json_response(msg)
+    cursor = db.orders.find(user_json.show_deliveries_input_json(args["id"]))
 
-            cursor = db.orders.find(user_json.show_deliveries_input_json(data["id"]))
-
-        else:
-            cursor = db.orders.find()
-
-        return json_util.dumps(user_json.show_deliveries_response_json(cursor))
+    return json_util.dumps(user_json.show_deliveries_response_json(cursor))
 
 
 # Return data validation errors as a JSON object

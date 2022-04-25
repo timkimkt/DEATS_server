@@ -48,6 +48,7 @@ class MatchUnmatchOrderInfo(Schema):
 
 class OrdersDeliveriesSchema(Schema):
     user_id = fields.Str(required=True)
+    order_id = fields.Str(required=True)
 
 
 
