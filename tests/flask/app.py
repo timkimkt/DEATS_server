@@ -380,39 +380,33 @@ def make_delivery(args):
 @app.route("/my_deliverer/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def get_my_deliverer(args):
-    data = request.get_json()
+    if session.get("id"):
+        # This logic is used to make the server backward compatible
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
+            return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        if args["order_id"]:
+            deliverer = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"deliverer_id": 1, "_id": 0})
 
-        if session.get("id"):
-            # This logic is used to make the server backward compatible
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
+            if deliverer:
+                print("deliverer", deliverer)
 
-            if data["order_id"]:
-                deliverer = db.orders.find_one({"_id": ObjectId(data["order_id"])}, {"deliverer_id": 1, "_id": 0})
+                if deliverer["deliverer_id"]:
+                    deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
+                                                                    {"name": 1, "email": 1, "phone_num": 1,
+                                                                     "_id": 0})
 
-                if deliverer:
-                    print("deliverer", deliverer)
+                print("deliverer_info", deliverer)
 
-                    if deliverer["deliverer_id"]:
-                        deliverer["deliverer_info"] = db.users.find_one({"_id": ObjectId(deliverer["deliverer_id"])},
-                                                                        {"name": 1, "email": 1, "phone_num": 1,
-                                                                         "_id": 0})
+                return user_json.make_get_my_deliverer_response(deliverer, True)
 
-                    print("deliverer_info", deliverer)
+            return user_json.make_get_my_deliverer_response({}, False)
 
-                    return user_json.make_get_my_deliverer_response(deliverer, True)
-
-                return user_json.make_get_my_deliverer_response({}, False)
-
-        msg = "Request denied. This device is not logged into the server yet"
-        return user_json.request_denied_json_response(msg)
+    msg = "Request denied. This device is not logged into the server yet"
+    return user_json.request_denied_json_response(msg)
 
 
 @app.route("/order_status/", methods=['POST'])
