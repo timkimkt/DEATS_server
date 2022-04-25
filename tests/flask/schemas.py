@@ -24,7 +24,7 @@ class OrderDelSchema(Schema):
     user_id = fields.Int(required=True)
     pickup_loc = fields.Str(required=True)
     drop_loc = fields.Str(required=True)
-    GET_code = fields.DateTime(required=True)
+    GET_code = fields.Str(load_only=True)
 
 
 class UpdateOrderSchema(Schema):
