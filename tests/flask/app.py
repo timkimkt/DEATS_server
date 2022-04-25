@@ -91,7 +91,7 @@ def update_account(args):
             msg = "The user's info has been updated successfully"
 
         else:
-            msg = "The user's info wasn't updated. The change already exist"
+            msg = "The user's info wasn't updated. Nothing different from what's on the server was sent"
 
         print("modified: ", succeeded, " number of users")
         return user_json.success_response_json(succeeded, msg)
