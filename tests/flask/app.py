@@ -237,10 +237,6 @@ def sso_logout():
 @app.route("/login/", methods=['POST'])
 @use_args(LoginSchema())
 def login(args):
-    data = request.get_json()
-    print("data", data)
-    print(request.headers['Content-Type'])
-
     succeeded = False
     msg = "Empty credentials"
     id = None
@@ -248,15 +244,15 @@ def login(args):
     phone_num = None
 
     try:
-        if data["email"]:
-            valid_email = validate_email(data["email"])
+        if args["email"]:
+            valid_email = validate_email(args["email"])
             user = db.users.find_one({"email": valid_email.email})
             print("email_check", user)
             if not user:
                 msg = "The Dartmouth email provided does not exist on the server"
 
             else:
-                user = db.users.find_one({"email": valid_email.email, "password": data["password"]})
+                user = db.users.find_one({"email": valid_email.email, "password": args["password"]})
                 print("password_check", user)
                 if not user:
                     msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
