@@ -21,9 +21,9 @@ class LoginSchema(Schema):
 
 
 class OrderDelSchema(Schema):
-    user_id = fields.Int(required=True)
-    pickup_loc = fields.Str(required=True)
-    drop_loc = fields.Str(required=True)
+    user_id = fields.Str(required=True)
+    pickup_loc = fields.Field(required=True)
+    drop_loc = fields.Field(required=True)
     GET_code = fields.Str(load_only=True)
 
 
