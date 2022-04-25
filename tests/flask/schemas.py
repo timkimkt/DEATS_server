@@ -28,7 +28,7 @@ class OrderDelSchema(Schema):
 
 
 class UpdateOrderSchema(Schema):
-    user_id = fields.Int(required=True)
+    user_id = fields.Str(required=True)
     pickup_loc = fields.Str(load_only=True)
     drop_loc = fields.Str(load_only=True)
     GET_code = fields.DateTime(load_only=True)
@@ -36,7 +36,7 @@ class UpdateOrderSchema(Schema):
 
 class MakeDelSchema(Schema):
     user_id = fields.Str(required=True)
-    start_point = fields.Field(required=True)
+    leaving_from = fields.Field(required=True)
     destination = fields.Field(required=True)
     num_deliveries = fields.Int(Missing=999)
 

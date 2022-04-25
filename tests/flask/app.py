@@ -363,7 +363,7 @@ def make_delivery(args):
             return user_json.request_denied_json_response(msg)
 
         result = db.users.update_one({"_id": ObjectId(args["user_id"])},
-                                     {"$set": user_json.make_delivery_json(args["final_des"])}, )
+                                     {"$set": user_json.make_delivery_json(args["destination"])}, )
         print("modified: ", result.modified_count, " number of deliverers")
 
         customer_finder = CustomerFinder(args["final_des"],

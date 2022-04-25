@@ -40,11 +40,11 @@ def order_delivery_json(customer_id, pickup_loc, drop_loc, pickup_loc_name, drop
 
 
 # temporarily assume final location and current location are the same
-def make_delivery_json(fin_location):
+def make_delivery_json(destination):
     return {
         "user_type": 'D',
         "active": True,
-        "final_des": fin_location
+        "destination": destination
     }
 
 
