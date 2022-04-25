@@ -3,14 +3,13 @@ import time
 from datetime import datetime
 
 
-def create_user_json(email=None, password=None, name=None, phone_num=None):
+def create_user_json(email, password, name, phone_num):
     return {
         "acc_active": True,
         "email": email,
         "name": name,
         "password": password,
         "phone_num": phone_num,
-        "user_type": None,
         "active": False,
         "final_des": {
             "x": None,

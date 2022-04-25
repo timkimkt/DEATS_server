@@ -48,42 +48,34 @@ def index():
 @app.route("/create_acc/", methods=['POST'])
 @use_args(CreateAccSchema())
 def create_account(args):
-    data = request.get_json()
-    print(args)
+    try:
+        valid_email = validate_email(args["email"])
+        user = db.users.find_one({"email": valid_email.email})
+        print("email_check", user)
+        if user:
+            msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
+                  "different email address "
+            return user_json.create_acc_response_json(False, msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        elif args["password"]:
+            # strong password creation is a pain, so allow developers to test without password validation
+            if not args["test"]:
+                validate_password(args["password"])
+            result = db.users.insert_one(
+                user_json.create_user_json(valid_email.email, args["password"], args["name"],
+                                           args["phone_num"]))
+            msg = "User deets are now on the server"
 
-        try:
-            if data["email"]:
-                valid_email = validate_email(data["email"])
-                user = db.users.find_one({"email": valid_email.email})
-                print("email_check", user)
-                if user:
-                    msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
-                          "different email address "
-                    return user_json.create_acc_response_json(False, msg)
+            # save user session
+            session["id"] = str(result.inserted_id)
 
-                elif data["password"]:
-                    # strong password creation is a pain, so allow developers to test without password validation
-                    if not data["test"]:
-                        validate_password(data["password"])
-                    result = db.users.insert_one(
-                        user_json.create_user_json(valid_email.email, data["password"], data.get("name"),
-                                                   data.get("phone_num")))
-                    msg = "User deets are now on the server"
+            # save account active status for easy access later on
+            session["acc_active"] = True
 
-                    # save user session
-                    session["id"] = str(result.inserted_id)
+            return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
 
-                    # save account active status for easy access later on
-                    session["acc_active"] = True
-
-                    return user_json.create_acc_response_json(True, msg, str(result.inserted_id))
-
-        except ValueError as err:
-            return user_json.create_acc_response_json(False, str(err))
+    except ValueError as err:
+        return user_json.create_acc_response_json(False, str(err))
 
 
 @app.route("/update_acc/", methods=['POST'])
