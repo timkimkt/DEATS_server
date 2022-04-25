@@ -309,29 +309,23 @@ def global_count():
 @app.route("/order_del/", methods=['POST'])
 @use_args(OrderDelSchema())
 def order_delivery(args):
-    data = request.get_json()
+    if session.get("id"):
+        # This logic is used to make the server backward compatible
+        print(session.get("acc_active"))
+        if session.get("acc_active") is not None and session.get("acc_active") is False:
+            msg = "Request denied. You've deactivated your account " \
+                  "You have to reactivate before making this request"
+            return user_json.request_denied_json_response(msg)
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
+        result = db.orders.insert_one(
+            user_json.order_delivery_json(args["id"], args["pickup_loc"], args["drop_loc"],
+                                          args["pickup_loc_name"], args["drop_loc_name"], args.get("GET_code")))
+        print("modified: ", result.inserted_id, " number of customers")
 
-        if session.get("id"):
-            # This logic is used to make the server backward compatible
-            print(session.get("acc_active"))
-            if session.get("acc_active") is not None and session.get("acc_active") is False:
-                msg = "Request denied. You've deactivated your account " \
-                      "You have to reactivate before making this request"
-                return user_json.request_denied_json_response(msg)
+        return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
 
-            result = db.orders.insert_one(
-                user_json.order_delivery_json(data["id"], data["pickup_loc"], data["drop_loc"],
-                                              data["pickup_loc_name"], data["drop_loc_name"], data.get("GET_code")))
-            print("modified: ", result.inserted_id, " number of customers")
-
-            return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
-
-        msg = "Request denied. This device is not logged into the server yet"
-        return user_json.request_denied_json_response(msg)
+    msg = "Request denied. This device is not logged into the server yet"
+    return user_json.request_denied_json_response(msg)
 
 
 @app.route("/update_order/", methods=['POST'])
