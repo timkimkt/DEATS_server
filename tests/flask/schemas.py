@@ -68,7 +68,11 @@ class MatchOrderSchema(Schema):
     order_id = fields.Str(required=True)
 
 
-class MatchUnmatchOrderInfo(Schema):
+class UnmatchOrderSchema(Schema):
+    order_id = fields.Str(required=True)
+
+
+class OrderInfo(Schema):
     user_id = fields.Str(required=True)
     order_id = fields.Str(required=True)
 
