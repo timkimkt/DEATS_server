@@ -525,8 +525,8 @@ def show_deliveries(args):
 @app.errorhandler(400)
 def handle_error(err):
     headers = err.data.get("headers", None)
-    messages = err.data.get("messages", ["Invalid request."])
+    messages = err.data.get("messages", ["Invalid request."]).get("json")
     if headers:
-        return {"data_validation_errors": messages}, err.code, headers
+        return user_json.validation_errors_json(messages), err.code, headers
     else:
-        return {"data_validation_errors": messages}, err.code
+        return user_json.validation_errors_json(messages), err.code

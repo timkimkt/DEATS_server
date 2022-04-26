@@ -194,3 +194,11 @@ def global_count_response_json(global_count):
     return {
         "global count": global_count
     }
+
+
+def validation_errors_json(validation_errors):
+    return {
+        "succeeded": False,
+        "msg": "The request was aborted due to data validation failures",
+        "data_validation_errors": validation_errors
+    }
