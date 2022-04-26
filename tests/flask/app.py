@@ -309,23 +309,25 @@ def global_count():
 @app.route("/order_del/", methods=['POST'])
 @use_args(OrderDelSchema())
 def order_delivery(args):
-    if session.get("user_id"):
-        # This logic is used to make the server backward compatible
-        print(session.get("acc_active"))
-        if session.get("acc_active") is not None and session.get("acc_active") is False:
-            msg = "Request denied. You've deactivated your account " \
-                  "You have to reactivate before making this request"
-            return user_json.request_denied_json_response(msg)
+    if not session.get("user_id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
 
-        result = db.orders.insert_one(
-            user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"],
-                                          args["pickup_loc_name"], args["drop_loc_name"], args.get("GET_code")))
-        print("modified: ", result.inserted_id, " number of customers")
+    if not session.get("acc_active"):
+        msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
+        return user_json.request_denied_json_response(msg)
 
-        return user_json.order_delivery_response_json(bool(result.inserted_id), str(result.inserted_id))
+    order_id = db.orders.insert_one(
+        user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"], args["GET_code"]))\
+        .inserted_id
 
-    msg = "Request denied. This device is not logged into the server yet"
-    return user_json.request_denied_json_response(msg)
+    if order_id:
+        msg = "The order request has been created successfully"
+
+    else:
+        msg = "The request data looks good but the order wasn't created. Try again"
+
+    return user_json.order_delivery_response_json(bool(order_id), msg, str(order_id))
 
 
 @app.route("/update_order/", methods=['POST'])
