@@ -61,9 +61,10 @@ def create_account(args):
             # strong password creation is a pain, so allow developers to test without password validation
             if not args["test"]:
                 validate_password(args["password"])
+
+            args["user_info"]["email"] = valid_email.email
             result = db.users.insert_one(
-                user_json.create_user_json(valid_email.email, args["name"],
-                                           args["phone_num"], args["password"]))
+                user_json.create_user_json(args["user_info"], args["password"]))
             msg = "User deets are now on the server"
 
             # save user session
