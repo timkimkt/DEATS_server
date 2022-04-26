@@ -26,10 +26,15 @@ class LogoutSchema(Schema):
     user_id = fields.Str(required=True)
 
 
+class CoordinatesSchema(Schema):
+    lat = fields.Float(required=True)
+    long = fields.Float(required=True)
+
+
 class OrderDelSchema(Schema):
     user_id = fields.Str(required=True)
-    pickup_loc = fields.Field(required=True)
-    drop_loc = fields.Field(required=True)
+    pickup_loc = fields.Nested(CoordinatesSchema)
+    drop_loc = fields.Nested(CoordinatesSchema)
     GET_code = fields.Str(load_only=True)
 
 
