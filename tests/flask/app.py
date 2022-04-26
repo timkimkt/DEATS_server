@@ -15,9 +15,8 @@ from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
-from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, LogoutSchema, \
-    OrderDelSchema, UpdateOrderSchema, MakeDelSchema, MatchOrderSchema, UnmatchOrderSchema, OrderInfo,\
-    OrdersDeliveriesSchema
+from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
+    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, OrderStatusSchema, MatchOrderSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -107,7 +106,7 @@ def update_account(args):
 
 
 @app.route("/delete_acc/", methods=['POST'])
-@use_args(ManipulateAccSchema())
+@use_args(UserIdSchema())
 def delete_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -124,7 +123,7 @@ def delete_account(args):
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
-@use_args(ManipulateAccSchema())
+@use_args(UserIdSchema())
 def deactivate_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -148,7 +147,7 @@ def deactivate_account(args):
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
-@use_args(ManipulateAccSchema())
+@use_args(UserIdSchema())
 def reactivate_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -280,7 +279,7 @@ def login(args):
 
 
 @app.route("/logout/", methods=['POST'])
-@use_args(LogoutSchema())
+@use_args(UserIdSchema())
 def logout(args):
     if session.pop("user_id", default=None) == args["user_id"]:
         succeeded = True
@@ -382,7 +381,7 @@ def make_delivery(args):
 
 
 @app.route("/my_deliverer/", methods=['POST'])
-@use_args(OrderInfo())
+@use_args(OrderIdSchema())
 def get_my_deliverer(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -407,7 +406,7 @@ def get_my_deliverer(args):
 
 
 @app.route("/order_status/", methods=['POST'])
-@use_args(OrderInfo())
+@use_args(OrderStatusSchema())
 def get_order_status(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -459,7 +458,7 @@ def match(args):
 
 
 @app.route("/unmatch/", methods=['POST'])
-@use_args(UnmatchOrderSchema())
+@use_args(OrderIdSchema())
 def unmatch(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -484,7 +483,7 @@ def unmatch(args):
 
 
 @app.route("/orders/", methods=['POST'])
-@use_args(OrdersDeliveriesSchema())
+@use_args(UserIdSchema())
 def show_orders(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -496,7 +495,7 @@ def show_orders(args):
 
 
 @app.route("/deliveries/", methods=['POST'])
-@use_args(OrdersDeliveriesSchema())
+@use_args(UserIdSchema())
 def show_deliveries(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
