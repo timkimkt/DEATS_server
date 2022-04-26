@@ -408,28 +408,26 @@ def get_my_deliverer(args):
 @app.route("/order_status/", methods=['POST'])
 @use_args(MatchUnmatchOrderInfo())
 def get_order_status(args):
-    if session.get("user_id"):
-        # This logic is used to make the server backward compatible
+    if not session.get("user_id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
+
+    if not session.get("acc_active"):
         print(session.get("acc_active"))
-        if session.get("acc_active") is not None and session.get("acc_active") is False:
-            msg = "Request denied. You've deactivated your account " \
-                  "You have to reactivate before making this request"
-            return user_json.request_denied_json_response(msg)
+        msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
+        return user_json.request_denied_json_response(msg)
 
-        if args["order_id"]:
-            result = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"order_status": 1, "_id": 0})
+    order_status = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"order_status": 1, "_id": 0})
 
-            if result:
-                user_json.make_get_order_status_response(result, True)
+    if order_status:
+        succeeded = True
+        msg = "Request successful"
 
-            else:
-                result = {}
-                user_json.make_get_order_status_response(result, False)
+    else:
+        succeeded = True
+        msg = "Request unsuccessful. Try again later"
 
-            return result
-
-    msg = "Request denied. This device is not logged into the server yet"
-    return user_json.request_denied_json_response(msg)
+    return user_json.make_get_order_status_response(succeeded, msg, order_status)
 
 
 @app.route("/match/", methods=['POST'])
