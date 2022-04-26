@@ -96,13 +96,14 @@ def match_customer_json(deliverer_id=None, order_status="M"):
 
 
 # ------------- JSON responses ------------- #
-def login_response_json(succeeded, msg, id, name, phone_num=None):
+def login_response_json(succeeded, msg, user_id, user_info):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "id": id,
-        "name": name,
-        "phone_num": phone_num
+        "user": {
+            "user_id": user_id,
+            "user_info": user_info
+        }
     }
 
 

@@ -243,43 +243,39 @@ def sso_logout():
 @use_args(LoginSchema())
 def login(args):
     succeeded = False
-    msg = "Empty credentials"
     user_id = None
-    name = None
-    phone_num = None
+    user_info = None
 
     try:
-        if args["email"]:
-            valid_email = validate_email(args["email"])
-            user = db.users.find_one({"email": valid_email.email})
-            print("email_check", user)
+        valid_email = validate_email(args["user_info"]["email"])
+        user = db.users.find_one({"user_info": {"email": valid_email.email}})
+        print("email_check", user)
+        if not user:
+            msg = "The Dartmouth email provided does not exist on the server"
+
+        else:
+            user = db.users.find_one({"user_info": {"email": valid_email.email}, "password": args["password"]})
+            print("password_check", user)
             if not user:
-                msg = "The Dartmouth email provided does not exist on the server"
+                msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
 
             else:
-                user = db.users.find_one({"email": valid_email.email, "password": args["password"]})
-                print("password_check", user)
-                if not user:
-                    msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
+                print(user)
+                succeeded = True
+                msg = "Yayy, the user exists!"
+                user_id = str(user["_id"])
+                user_info = user["user_info"]
 
-                else:
-                    print(user)
-                    succeeded = True
-                    msg = "Yayy, the user exists!"
-                    user_id = str(user["_id"])
-                    name = user["name"]
-                    phone_num = user["phone_num"]
+                # save user session
+                session["user_id"] = user_id
 
-                    # save user session
-                    session["user_id"] = user_id
+                # save account active status for easy access later on
+                session["acc_active"] = user.get("acc_active")
 
-                    # save account active status for easy access later on
-                    session["acc_active"] = user.get("acc_active")
-
-        return user_json.login_response_json(succeeded, msg, user_id, name, phone_num)
+        return user_json.login_response_json(succeeded, msg, user_id, user_info)
 
     except ValueError as err:
-        return user_json.create_acc_response_json(False, str(err))
+        return user_json.success_response_json(False, str(err))
 
 
 @app.route("/logout/", methods=['POST'])
