@@ -15,7 +15,7 @@ from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
-from tests.flask.schemas import CreateAccSchema, ManipulateAccSchema, LoginSchema, OrderDelSchema, \
+from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, OrderDelSchema, \
     UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
 
 db = MongoClientConnection.get_database()
@@ -80,26 +80,29 @@ def create_account(args):
 
 
 @app.route("/update_acc/", methods=['POST'])
-@use_args(ManipulateAccSchema())
+@use_args(UpdateAccSchema())
 def update_account(args):
-    if session.get("user_id"):
-        user_id = args["user_id"]
-        del args["user_id"]
-        succeeded = bool(db.users.update_one({"_id": ObjectId(user_id)},
-                                             {"$set": args}).modified_count)
-
-        if succeeded:
-            msg = "The user's info has been updated successfully"
-
-        else:
-            msg = "The user's info wasn't updated. Nothing different from what's on the server was sent"
-
-        print("modified: ", succeeded, " number of users")
-        return user_json.success_response_json(succeeded, msg)
-
-    else:
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
+
+    succeeded = 0
+    for key, value in args.items():
+        if key == "password":
+            try:
+                validate_password(args["password"])
+
+            except ValueError as err:
+                return user_json.success_response_json(False, str(err))
+
+        result = db.users.update_one({"_id": ObjectId(args["user_id"])},
+                                     {"$set": {key: value}})
+        succeeded = max(succeeded, result.modified_count)
+
+    # bulk update message; might do individual messaging in the future
+    msg = "The user's account has been updated" if succeeded else "The request was not completed. Nothing new was" \
+                                                                  "passed"
+    return user_json.success_response_json(bool(succeeded), msg)
 
 
 @app.route("/delete_acc/", methods=['POST'])
@@ -372,7 +375,8 @@ def make_delivery(args):
 
         customer_finder.sort_customers()
 
-        return user_json.start_delivery_response_json(customer_finder.get_k_least_score_customers(args["num_deliveries"]))
+        return user_json.start_delivery_response_json(
+            customer_finder.get_k_least_score_customers(args["num_deliveries"]))
 
     msg = "Request denied. This device is not logged into the server yet"
     return user_json.request_denied_json_response(msg)

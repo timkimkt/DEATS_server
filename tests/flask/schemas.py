@@ -7,10 +7,14 @@ class CreateAccSchema(Schema):
     test = fields.Bool(missing=False)
 
 
+class UpdateAccSchema(Schema):
+    user_id = fields.Str(required=True)
+    user_info = fields.Field(load_only=True)
+    password = fields.Field(load_only=True)
+
+
 class ManipulateAccSchema(Schema):
     user_id = fields.Str(required=True)
-    name = fields.Str(load_only=True)
-    phone_num = fields.Str(load_only=True)
 
 
 class LoginSchema(Schema):
