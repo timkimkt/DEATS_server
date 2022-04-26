@@ -22,6 +22,10 @@ class LoginSchema(Schema):
     password = fields.Field(required=True)
 
 
+class LogoutSchema(Schema):
+    user_id = fields.Str(required=True)
+
+
 class OrderDelSchema(Schema):
     user_id = fields.Str(required=True)
     pickup_loc = fields.Field(required=True)

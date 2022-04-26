@@ -15,8 +15,8 @@ from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
-from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, OrderDelSchema, \
-    UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
+from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, LogoutSchema, \
+    OrderDelSchema,UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -279,17 +279,16 @@ def login(args):
 
 
 @app.route("/logout/", methods=['POST'])
-def logout():
-    data = request.get_json()
+@use_args(LogoutSchema())
+def logout(args):
+    if session.pop("user_id", default=None) == args["user_id"]:
+        succeeded = True
+        msg = "The user with id, ", + args["user_id"] + ", has been logged out"
+    else:
+        succeeded = True
+        msg = "The request was unsuccessful. The user isn't logged in"
 
-    if data:
-        print("data", data)
-        print(request.headers['Content-Type'])
-        session.pop("user_id", default=None)
-        session.pop("acc_active", default=None)
-        msg = "You've logged out successfully"
-
-        return user_json.success_response_json(True, msg)
+    return user_json.success_response_json(succeeded, msg)
 
 
 @app.route("/show_users/", methods=['GET'])
