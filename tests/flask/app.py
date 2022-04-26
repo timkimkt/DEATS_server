@@ -114,7 +114,7 @@ def delete_account(args):
 
     result = db.users.delete_one({"_id": ObjectId(args["user_id"])})
     if result.deleted_count:
-        msg = "User with id, " + args["user_id"] + ", has been removed from the server"
+        msg = "User with id, " + args["user_id"] + ", has been deleted from the server"
         session.pop("user_id", default=None)
 
     else:
@@ -175,7 +175,7 @@ def sso_login():
     service_ticket = request.args.get("ticket")
 
     print("next", next)
-    print(("tick", service_ticket))
+    print(("service_ticket", service_ticket))
 
     # redirect to CAS server for user login if no ticket is found
     if not service_ticket:
@@ -193,33 +193,34 @@ def sso_login():
     net_id_email = attributes.get("netid") + "@dartmouth.edu"
 
     if user:
-        result_find = db.users.find_one({"email": net_id_email})
+        result_find = db.users.find_one({"user_info": {"email": net_id_email}})
 
         if result_find:
             msg = "You've logged into DEATS successfully through Dartmouth SSO"
             print(result_find)
-            id = str(result_find["_id"])
-            name = result_find["name"]
-            phone_num = result_find["phone_num"]
+            user_id = str(result_find["_id"])
+            name = result_find["user_info"]["name"]
+            phone_num = result_find["user_info"]["phone_num"]
+
             # save account active status for easy access later on
             session["acc_active"] = result_find.get("acc_active")
 
         else:
-            name = attributes.get("name")
             result_insert = db.users.insert_one(user_json.create_user_json(net_id_email, name=name))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
-            id = str(result_insert.inserted_id)
+            user_id = str(result_insert.inserted_id)
+            name = attributes.get("name")
             phone_num = None
 
             # save account active status for easy access later on
             session["acc_active"] = True
 
         # save user session
-        session["user_id"] = id
+        session["user_id"] = user_id
 
         return user_json.sso_login_response_json(True,
                                                  msg,
-                                                 id,
+                                                 user_id,
                                                  name,
                                                  net_id_email,
                                                  phone_num,

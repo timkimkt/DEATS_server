@@ -106,19 +106,20 @@ def login_response_json(succeeded, msg, id, name, phone_num=None):
     }
 
 
-def sso_login_response_json(succeeded, msg, id, name, net_id_email, phone_num, is_new_login, authentication_date):
+def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_num, is_new_login, authentication_date):
     return {
         "succeeded": succeeded,
         "msg": msg,
         "is_new_login": is_new_login,
         "authentication_date": authentication_date,
-        "user_info":
-            {
-                "id": id,
-                "email": net_id_email,
-                "name": name,
-                "phone_num": phone_num,
+        "user": {
+            "user_id": user_id,
+            "user_info": {
+                    "email": net_id_email,
+                    "name": name,
+                    "phone_num": phone_num
             }
+        }
     }
 
 
