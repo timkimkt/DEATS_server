@@ -128,7 +128,9 @@ def create_acc_response_json(succeeded, msg, user_id=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "user_id": user_id,
+        "user": {
+            "user_id": user_id,
+        }
     }
 
 
