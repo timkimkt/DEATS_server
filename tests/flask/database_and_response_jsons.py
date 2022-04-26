@@ -15,9 +15,12 @@ def create_user_json(user_info, password):
 # don't need active status: indicated by being put in the order status
 # don't need user type: all orders are requested by a customer
 # need status: delivered, pending, matched, and picked_up to keep track of order and delivery status
-def order_delivery_json(customer, pickup_loc, drop_loc, get_code):
+def order_delivery_json(customer_id, customer_info, pickup_loc, drop_loc, get_code):
     return {
-        "customer": customer,
+        "customer": {
+            "customer_id": customer_id,
+            "customer_info": customer_info
+        },
         "deliverer": None,
         "pickup_loc": pickup_loc,
         "drop_loc": drop_loc,
@@ -39,7 +42,7 @@ def make_delivery_json(leaving_from, destination):
 
 def find_order_json():
     return {
-        "deliverer_id": None
+        "deliverer": None
     }
 
 
@@ -158,8 +161,27 @@ def order_delivery_response_json(succeeded, msg, order_id):
     }
 
 
+def order_json(order_id, pickup_loc, drop_loc):
+    return {
+        "order": {
+            "order_id": order_id,
+            "pickup_loc": pickup_loc,
+            "drop_loc": drop_loc
+        }
+    }
+
+
+def customer_and_order_json(customer, order):
+    return {
+        "customer": customer,
+        "order": order
+    }
+
+
 def start_delivery_response_json(unmatched_users):
     return {
+        "succeeded": True,
+        "msg": "The request was successful",
         "unmatched_users": unmatched_users
     }
 

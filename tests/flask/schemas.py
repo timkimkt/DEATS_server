@@ -72,8 +72,9 @@ class UpdateLocationSchema(Schema):
 
 
 class UpdateOrderInfoSchema(Schema):
-    pickup_loc = fields.Nested(UpdateLocationSchema(), required=True)
-    drop_loc = fields.Nested(UpdateLocationSchema(), required=True)
+    order_id = fields.Str(required=True)
+    pickup_loc = fields.Nested(UpdateLocationSchema(), load_only=True)
+    drop_loc = fields.Nested(UpdateLocationSchema(), load_only=True)
     GET_code = fields.Str(load_only=True)
 
 

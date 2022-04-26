@@ -10,6 +10,6 @@ class MongoClientConnection(object):
 
     @staticmethod
     def get_database():
-        return MongoClient(DATABASE_URL).test1
+        return MongoClient(DATABASE_URL).test2
 
 

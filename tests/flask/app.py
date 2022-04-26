@@ -207,10 +207,10 @@ def sso_login():
             session["acc_active"] = result_find.get("acc_active")
 
         else:
-            result_insert = db.users.insert_one(user_json.create_user_json(net_id_email, name=name))
+            name = attributes.get("name")
+            result_insert = db.users.insert_one(user_json.create_user_json(net_id_email, name))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
-            name = attributes.get("name")
             phone_num = None
 
             # save account active status for easy access later on
@@ -319,10 +319,12 @@ def order_delivery(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
+    customer_info = db.users.find_one({"_id": ObjectId(args["user_id"])}, {"user_info": 1, "_id": 0})
+
     order_id = db.orders.insert_one(
-        user_json.order_delivery_json(
-            args["user_id"], args["order"]["pickup_loc"], args["order"]["drop_loc"], args["order"]["GET_code"]))\
-        .inserted_id
+        user_json.order_delivery_json(args["user_id"], customer_info,
+                                      args["order"]["pickup_loc"], args["order"]["drop_loc"],
+                                      args["order"]["GET_code"])).inserted_id
 
     if order_id:
         msg = "The order request has been created successfully"
@@ -347,10 +349,11 @@ def update_order(args):
 
     succeeded = 0
     order_id = args["order"]["order_id"]
-    for key, value in args["order"]["order_info"].items():
-        print("key: ", key, " value: ", value)
-        result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
-        succeeded = max(succeeded, result.modified_count)
+    for key, value in args["order"].items():
+        if key != "order_id":
+            print("key: ", key, " value: ", value)
+            result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
+            succeeded = max(succeeded, result.modified_count)
 
     msg = "The user's order has been updated" if succeeded else "The request wasn't successful. No new info was " \
                                                                 "provided "
@@ -369,17 +372,19 @@ def make_delivery(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
+    delivery = args["delivery"]
     result = db.users.update_one({"_id": ObjectId(args["user_id"])},
-                                 {"$set": user_json.make_delivery_json(args["leaving_from"], args["destination"])}, )
+                                 {"$set": user_json.make_delivery_json(
+                                     delivery["leaving_from"], delivery["destination"])}, )
     print("modified: ", result.modified_count, " number of users")
 
-    customer_finder = CustomerFinder(args["destination"],
+    customer_finder = CustomerFinder(delivery["destination"],
                                      db.orders.find(user_json.find_order_json()))
 
     customer_finder.sort_customers()
 
     return user_json.start_delivery_response_json(
-        customer_finder.get_k_least_score_customers(args["num_deliveries"]))
+        customer_finder.get_k_least_score_customers(delivery["num_deliveries"]))
 
 
 @app.route("/my_deliverer/", methods=['POST'])
