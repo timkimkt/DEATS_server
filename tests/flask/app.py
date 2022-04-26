@@ -54,7 +54,7 @@ def create_account(args):
         print("email_check", user)
         if user:
             msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
-                  "different email address "
+                  "different email address"
             return user_json.create_acc_response_json(False, msg)
 
         elif args["password"]:

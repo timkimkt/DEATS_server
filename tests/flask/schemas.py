@@ -31,8 +31,12 @@ class UpdateAccSchema(Schema):
     user = fields.Nested(UpdateAccUserSchema(), required=True)
 
 
-class LoginSchema(Schema):
+class EmailSchema(Schema):
     email = fields.Str(required=True)
+
+    
+class LoginSchema(Schema):
+    user_info = fields.Nested(EmailSchema(), required=True)
     password = fields.Field(required=True)
 
 
