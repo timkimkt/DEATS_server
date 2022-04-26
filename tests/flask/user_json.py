@@ -168,9 +168,14 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
-def make_get_my_deliverer_response(result, succeeded):
-    result["succeeded"] = succeeded
-    return result
+def make_get_my_deliverer_response(succeeded, msg, deliverer_info):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "deliverer": {
+            "deliverer_info": deliverer_info
+        }
+    }
 
 
 def make_get_order_status_response(result, succeeded):
