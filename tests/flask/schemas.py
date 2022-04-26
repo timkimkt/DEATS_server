@@ -34,7 +34,7 @@ class UpdateAccSchema(Schema):
 class EmailSchema(Schema):
     email = fields.Str(required=True)
 
-    
+
 class LoginSchema(Schema):
     user_info = fields.Nested(EmailSchema(), required=True)
     password = fields.Field(required=True)
@@ -53,7 +53,7 @@ class LocationSchema(Schema):
 class OrderDelInfoSchema(Schema):
     pickup_loc = fields.Nested(LocationSchema(), required=True)
     drop_loc = fields.Nested(LocationSchema(), required=True)
-    GET_code = fields.Str(load_only=True)
+    GET_code = fields.Str(missing=None)
 
 
 class OrderDelSchema(Schema):

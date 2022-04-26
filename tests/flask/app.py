@@ -284,7 +284,7 @@ def login(args):
 def logout(args):
     if session.pop("user_id", default=None) == args["user_id"]:
         succeeded = True
-        msg = "The user with id, ", + args["user_id"] + ", has been logged out"
+        msg = "The user with id, " + args["user_id"] + ", has been logged out"
     else:
         succeeded = True
         msg = "The request was unsuccessful. The user isn't logged in"
@@ -320,7 +320,8 @@ def order_delivery(args):
         return user_json.request_denied_json_response(msg)
 
     order_id = db.orders.insert_one(
-        user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"], args["GET_code"])) \
+        user_json.order_delivery_json(
+            args["user_id"], args["order"]["pickup_loc"], args["order"]["drop_loc"], args["order"]["GET_code"]))\
         .inserted_id
 
     if order_id:
