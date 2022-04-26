@@ -16,7 +16,7 @@ from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
 from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, LogoutSchema, \
-    OrderDelSchema,UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
+    OrderDelSchema, UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -314,11 +314,12 @@ def order_delivery(args):
         return user_json.request_denied_json_response(msg)
 
     if not session.get("acc_active"):
+        print(session.get("acc_active"))
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
     order_id = db.orders.insert_one(
-        user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"], args["GET_code"]))\
+        user_json.order_delivery_json(args["user_id"], args["pickup_loc"], args["drop_loc"], args["GET_code"])) \
         .inserted_id
 
     if order_id:
@@ -333,24 +334,25 @@ def order_delivery(args):
 @app.route("/update_order/", methods=['POST'])
 @use_args(UpdateOrderSchema())
 def update_order(args):
-    if session.get("user_id"):
+    if not session.get("user_id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
+
+    if not session.get("acc_active"):
         print(session.get("acc_active"))
-        if session.get("acc_active") is not None and session.get("acc_active") is False:
-            msg = "Request denied. You've deactivated your account " \
-                  "You have to reactivate before making this request"
-            return user_json.request_denied_json_response(msg)
+        msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
+        return user_json.request_denied_json_response(msg)
 
-        succeeded = 0
-        for key, value in args.items():
-            print("key: ", key, " value: ", value)
-            if value and key != "user_id" and key != "order_id":
-                result = db.orders.update_one({"_id": ObjectId(args["order_id"]), key: {"$exists": True}},
-                                              {"$set": {key: value}})
+    succeeded = 0
+    order_id = args["order"]["order_id"]
+    for key, value in args["order"]["order_info"].items():
+        print("key: ", key, " value: ", value)
+        result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
+        succeeded = max(succeeded, result.modified_count)
 
-                succeeded = max(succeeded, result.modified_count)
-
-        msg = "The user's order has been updated" if succeeded else "The request was not completed"
-        return user_json.success_response_json(bool(succeeded), msg)
+    msg = "The user's order has been updated" if succeeded else "The request wasn't successful. No new info was " \
+                                                                "provided "
+    return user_json.success_response_json(bool(succeeded), msg)
 
 
 @app.route("/make_del/", methods=['POST'])
