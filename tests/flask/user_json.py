@@ -12,16 +12,7 @@ def create_user_json(email, name, phone_num, password):
             "name": name,
             "phone_num": phone_num,
         },
-        "delivery_info": {
-            "final_des": {
-                "x": None,
-                "y": None
-            },
-            "res_location": {
-                "x": None,
-                "y": None
-            }
-        }
+        "delivery_info": None
     }
 
 
@@ -41,11 +32,12 @@ def order_delivery_json(customer, pickup_loc, drop_loc, get_code):
 
 
 # temporarily assume final location and current location are the same
-def make_delivery_json(destination):
+def make_delivery_json(leaving_from, destination):
     return {
-        "user_type": 'D',
-        "active": True,
-        "destination": destination
+        "delivery_info": {
+            "leaving_from": leaving_from,
+            "destination": destination
+        }
     }
 
 

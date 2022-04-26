@@ -47,8 +47,8 @@ class UpdateOrderSchema(Schema):
 
 class MakeDelSchema(Schema):
     user_id = fields.Str(required=True)
-    leaving_from = fields.Field(required=True)
-    destination = fields.Field(required=True)
+    leaving_from = fields.Nested(CoordinatesSchema)
+    destination = fields.Nested(CoordinatesSchema)
     num_deliveries = fields.Int(Missing=999)
 
 
