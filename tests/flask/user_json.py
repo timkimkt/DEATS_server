@@ -50,7 +50,7 @@ def find_order_json():
 def match_order_json(order_id):
     return {
         "_id": order_id,
-        "order_status": "W"
+        "order_status": "pending"
     }
 
 
@@ -78,9 +78,9 @@ def show_deliveries_response_json(deliveries):
     }
 
 
-def match_customer_json(deliverer_id=None, order_status="M"):
+def match_unmatch_customer_json(deliverer=None, order_status="matched"):
     return {
-        "deliverer_id": deliverer_id,
+        "deliverer": deliverer,
         "order_status": order_status
     }
 

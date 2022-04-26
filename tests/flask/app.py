@@ -16,7 +16,7 @@ from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
 from tests.flask.schemas import CreateAccSchema, UpdateAccSchema, ManipulateAccSchema, LoginSchema, LogoutSchema, \
-    OrderDelSchema, UpdateOrderSchema, MakeDelSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
+    OrderDelSchema, UpdateOrderSchema, MakeDelSchema, MatchOrderSchema, MatchUnmatchOrderInfo, OrdersDeliveriesSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -431,33 +431,30 @@ def get_order_status(args):
 
 
 @app.route("/match/", methods=['POST'])
-@use_args(MatchUnmatchOrderInfo())
+@use_args(MatchOrderSchema())
 def match(args):
-    if session.get("user_id"):
-        # This logic is used to make the server backward compatible
-        print(session.get("acc_active"))
-        if session.get("acc_active") is not None and session.get("acc_active") is False:
-            msg = "Request denied. You've deactivated your account " \
-                  "You have to reactivate before making this request"
-            return user_json.request_denied_json_response(msg)
-
-        succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
-                                         {"$set": user_json.match_customer_json(args["user_id"])}, ).modified_count
-        print("modified: ", succeeded, " number of customers")
-
-        if succeeded:
-            msg = "Request completed. User has been matched"
-
-        else:
-            msg = "Request not completed. User has already been matched"
-
-        print("modified: ", succeeded, " number of users")
-
-        return user_json.success_response_json(succeeded, msg)
-
-    else:
+    if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
+
+    if not session.get("acc_active"):
+        print(session.get("acc_active"))
+        msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
+        return user_json.request_denied_json_response(msg)
+
+    succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
+                                     {"$set": user_json.match_unmatch_customer_json(args["user"])}, ).modified_count
+    print("modified: ", succeeded, " number of customers")
+
+    if succeeded:
+        msg = "Request completed. User has been matched"
+
+    else:
+        msg = "Request not completed. User has already been matched"
+
+    print("modified: ", succeeded, " number of users")
+
+    return user_json.success_response_json(succeeded, msg)
 
 
 @app.route("/unmatch/", methods=['POST'])
@@ -472,7 +469,7 @@ def unmatch(args):
             return user_json.request_denied_json_response(msg)
 
         succeeded = db.users.update_one(user_json.match_order_json(ObjectId(args["customer_id"])),
-                                        {"$set": user_json.match_customer_json(order_status="W")}, ).modified_count
+                                        {"$set": user_json.match_unmatch_customer_json(order_status="W")}, ).modified_count
         print("modified: ", succeeded, " number of customers")
 
         if succeeded:

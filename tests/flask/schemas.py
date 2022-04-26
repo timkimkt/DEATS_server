@@ -52,6 +52,22 @@ class MakeDelSchema(Schema):
     num_deliveries = fields.Int(Missing=999)
 
 
+class UserInfoSchema(Schema):
+    email = fields.Str(required=True)
+    name = fields.Str(required=True)
+    phone_num = fields.Str(required=True)
+
+
+class UserSchema(Schema):
+    user_id = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoSchema)
+
+
+class MatchOrderSchema(Schema):
+    user = fields.Nested(UserSchema)
+    order_id = fields.Str(required=True)
+
+
 class MatchUnmatchOrderInfo(Schema):
     user_id = fields.Str(required=True)
     order_id = fields.Str(required=True)
