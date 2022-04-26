@@ -2,10 +2,8 @@ from marshmallow import Schema, fields
 
 
 class CreateAccSchema(Schema):
-    email = fields.Str(required=True)
+    user_info = fields.Field(required=True)
     password = fields.Field(required=True)
-    name = fields.Str(missing=None)
-    phone_num = fields.Str(missing=None)
     test = fields.Bool(missing=False)
 
 
