@@ -3,7 +3,7 @@ from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
 
-import tests.flask.user_json as user_json
+import tests.flask.database_and_response_jsons as user_json
 
 from bson.objectid import ObjectId
 from datetime import timedelta
