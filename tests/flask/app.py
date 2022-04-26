@@ -349,14 +349,19 @@ def update_order(args):
 
     succeeded = 0
     order_id = args["order"]["order_id"]
+    msg = "The order with id, " + order_id + ", doesn't exist"
     for key, value in args["order"].items():
         if key != "order_id":
             print("key: ", key, " value: ", value)
             result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
+
+            if not result.matched_count: # return immediately if the order doesn't exist
+                return user_json.success_response_json(bool(succeeded), msg)
+
             succeeded = max(succeeded, result.modified_count)
 
     msg = "The user's order has been updated" if succeeded else "The request wasn't successful. No new info was " \
-                                                                "provided "
+                                                                "provided"
     return user_json.success_response_json(bool(succeeded), msg)
 
 
