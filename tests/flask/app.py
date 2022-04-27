@@ -460,7 +460,7 @@ def match(args):
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
         return user_json.match_response_json(False, msg, None)
 
-    result = db.orders.update_one(user_json.match_unmatch_order_filter_json(ObjectId(args["order_id"])),
+    result = db.orders.update_one(user_json.match_order_filter_json(ObjectId(args["order_id"])),
                                   {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
 
     if result.modified_count:
@@ -474,7 +474,7 @@ def match(args):
 
 
 @app.route("/unmatch/", methods=['POST'])
-@use_args(OrderIdSchema())
+@use_args(UserIdOrderIdSchema())
 def unmatch(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -492,7 +492,7 @@ def unmatch(args):
         return user_json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        user_json.match_unmatch_order_filter_json(ObjectId(args["order_id"]), order_status="matched"),
+        user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"], order_status="matched"),
         {"$set": user_json.match_unmatch_customer_json(order_status="pending")}, )
 
     if result.modified_count:

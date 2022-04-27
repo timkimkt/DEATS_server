@@ -46,10 +46,21 @@ def find_order_json():
     }
 
 
-def match_unmatch_order_filter_json(order_id, order_status="pending"):
+def match_order_filter_json(order_id, order_status="pending"):
     return {
         "_id": order_id,
         "order_status": order_status
+    }
+
+
+def unmatch_order_filter_json(order_id, user_id, order_status="pending"):
+    return {
+        "_id": order_id,
+        "order_status": order_status,
+        "$or": [
+            {"deliverer.id": user_id},
+            {"customer.id": user_id}
+        ]
     }
 
 
