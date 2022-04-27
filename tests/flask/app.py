@@ -465,6 +465,11 @@ def match(args):
         msg = "You created this order. You can't self-match"
         return user_json.match_response_json(False, msg, None)
 
+    # Ensure the order hasn't been cancelled
+    if order["order_status"] == "cancelled":
+        msg = "The order with id, " + args["order_id"] + ", has been cancelled by the customer"
+        return user_json.match_response_json(False, msg, None)
+
     result = db.orders.update_one(user_json.match_order_filter_json(ObjectId(args["order_id"])),
                                   {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
 
@@ -540,7 +545,7 @@ def cancel_order(args):
         msg = "Request completed. Order with id, " + args["order_id"] + " cancelled"
 
     else:
-        msg = "The request was unsuccessful. The order could not be cancelled. Try again later"
+        msg = "The request was unsuccessful. The order has already been cancelled"
 
     return user_json.success_response_json(bool(result.modified_count), msg)
 
