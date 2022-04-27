@@ -499,7 +499,7 @@ def unmatch(args):
     #if order["customer"]["user_id"] == args["user_id"] and (args["order_status"] != "matched" or )
 
     result = db.orders.update_one(
-        user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"], order_status="matched"),
+        user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"]),
         {"$set": user_json.match_unmatch_customer_json(order_status="pending")}, )
 
     if result.modified_count:
