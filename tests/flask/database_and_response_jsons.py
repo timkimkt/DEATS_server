@@ -76,7 +76,7 @@ def unmatch_order_filter_json(order_id, user_id):
 def cancel_order_filter_json(order_id, customer_id):
     return {
         "_id": order_id,
-        "customer_id": customer_id
+        "customer.user_id": customer_id
     }
 
 
