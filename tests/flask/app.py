@@ -460,6 +460,11 @@ def match(args):
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
         return user_json.match_response_json(False, msg, None)
 
+    # Prevent self-matching
+    if order["customer"]["user_id"] == args["user"]["user_id"]:
+        msg = "You created this order. You can't self-match"
+        return user_json.match_response_json(False, msg, None)
+
     result = db.orders.update_one(user_json.match_order_filter_json(ObjectId(args["order_id"])),
                                   {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
 
@@ -490,6 +495,8 @@ def unmatch(args):
     if not order:
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
         return user_json.success_response_json(False, msg)
+
+    #if order["customer"]["user_id"] == args["user_id"] and (args["order_status"] != "matched" or )
 
     result = db.orders.update_one(
         user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"], order_status="matched"),
