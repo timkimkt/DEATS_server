@@ -355,7 +355,7 @@ def update_order(args):
             print("key: ", key, " value: ", value)
             result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
 
-            if not result.matched_count: # return immediately if the order doesn't exist
+            if not result.matched_count:  # return immediately if the order doesn't exist
                 return user_json.success_response_json(bool(succeeded), msg)
 
             succeeded = max(succeeded, result.modified_count)
@@ -454,19 +454,23 @@ def match(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    succeeded = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
-                                     {"$set": user_json.match_unmatch_customer_json(args["user"])}, ).modified_count
-    print("modified: ", succeeded, " number of customers")
+    # Check if the order exists
+    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    if not order:
+        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        return user_json.match_response_json(False, msg, None)
 
-    if succeeded:
-        msg = "Request completed. User has been matched"
+    result = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
+                                  {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
+
+    if result.modified_count:
+        msg = "Request completed. You've been matched with the order"
 
     else:
-        msg = "Request not completed. User has already been matched"
+        msg = "Request not completed. The order has already been matched"
 
-    print("modified: ", succeeded, " number of users")
-
-    return user_json.success_response_json(succeeded, msg)
+    # Returns the current user info of the customer in case they updated their info before the match
+    return user_json.match_response_json(bool(result.modified_count), msg, order["customer"])
 
 
 @app.route("/unmatch/", methods=['POST'])

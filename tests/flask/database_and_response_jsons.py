@@ -204,6 +204,14 @@ def make_get_order_status_response(succeeded, msg, order_status):
     }
 
 
+def match_response_json(succeeded, msg, customer):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "matched_customer": customer
+    }
+
+
 def success_response_json(succeeded, msg):
     return {
         "succeeded": succeeded,
