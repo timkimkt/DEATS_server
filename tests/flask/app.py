@@ -16,7 +16,7 @@ from tests.flask.validate_email import validate_email
 
 from webargs.flaskparser import use_args
 from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
-    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, OrderStatusSchema, MatchOrderSchema
+    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -418,7 +418,7 @@ def get_my_deliverer(args):
 
 
 @app.route("/order_status/", methods=['POST'])
-@use_args(OrderStatusSchema())
+@use_args(UserIdOrderIdSchema())
 def get_order_status(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -489,7 +489,7 @@ def unmatch(args):
     order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
     if not order:
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
-        return user_json.match_response_json(False, msg, None)
+        return user_json.success_response_json(False, msg)
 
     result = db.orders.update_one(
         user_json.match_unmatch_order_filter_json(ObjectId(args["order_id"]), order_status="matched"),
@@ -500,6 +500,40 @@ def unmatch(args):
 
     else:
         msg = "The request was unsuccessful. The order did not have a deliverer to unmatch"
+
+    return user_json.success_response_json(bool(result.modified_count), msg)
+
+
+@app.route("/cancel_order/", methods=['POST'])
+@use_args(UserIdOrderIdSchema())
+def cancel_order(args):
+    if not session.get("user_id"):
+        msg = "Request denied. This device is not logged into the server yet"
+        return user_json.request_denied_json_response(msg)
+
+    if not session.get("acc_active"):
+        print(session.get("acc_active"))
+        msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
+        return user_json.request_denied_json_response(msg)
+
+    # Check if the order exists
+    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    if not order:
+        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        return user_json.success_response_json(False, msg)
+
+    result = db.orders.update_one(
+        user_json.cancel_order_filter_json(ObjectId(args["order_id"]), args["user_id"]),
+        {"$set": user_json.match_unmatch_customer_json(order_status="cancelled")}, )
+
+    if not result.matched_count:  # Ensure the user has permission to cancel the order
+        msg = "You don't have permission to cancel this order"
+
+    elif result.modified_count:  # Check for order cancellation
+        msg = "Request completed. Order with id, " + args["order_id"] + " cancelled"
+
+    else:
+        msg = "The request was unsuccessful. The order could not be cancelled. Try again later"
 
     return user_json.success_response_json(bool(result.modified_count), msg)
 

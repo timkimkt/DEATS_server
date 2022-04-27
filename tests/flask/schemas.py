@@ -98,7 +98,7 @@ class OrderIdSchema(Schema):
     order_id = fields.Str(required=True)
 
 
-class OrderStatusSchema(Schema):
+class UserIdOrderIdSchema(Schema):
     user_id = fields.Str(required=True)
     order_id = fields.Str(required=True)
 
