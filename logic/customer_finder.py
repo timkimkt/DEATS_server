@@ -16,21 +16,24 @@ def compute_distance(loc1, loc2):
 
 
 class CustomerFinder:
-    def __init__(self, deliverer_loc, customers):
-        self.deliverer = Deliverer(coordinates=deliverer_loc["coordinates"])
-        self.customers = customers
+    def __init__(self, deliverer_id, deliverer_loc, orders):
+        self.deliverer = Deliverer(deliverer_id, coordinates=deliverer_loc["coordinates"])
+        self.orders = orders
         self.queue = []
 
     def sort_customers(self):
-        for customer_json in self.customers:
-            print("customer: ", customer_json)
+        for order_json in self.orders:
+            if order_json["customer"]["user_id"] != self.deliverer.user_id:
+                continue
+
+            print("customer: ", order_json)
 
             score = self.compute_score(
-                customer_json["pickup_loc"]["coordinates"], customer_json["drop_loc"]["coordinates"])
+                order_json["pickup_loc"]["coordinates"], order_json["drop_loc"]["coordinates"])
             print("score: ", score)
-            print("customer: ", str(customer_json["customer"]))
-            heapq.heappush(self.queue, Customer(customer_json["customer"], str(customer_json["_id"]),
-                                                customer_json["pickup_loc"], customer_json["drop_loc"], score))
+            print("customer: ", str(order_json["customer"]))
+            heapq.heappush(self.queue, Customer(order_json["customer"], str(order_json["_id"]),
+                                                order_json["pickup_loc"], order_json["drop_loc"], score))
 
     def get_k_least_score_customers(self, k):
         least_scored_customers = []
@@ -46,7 +49,8 @@ class CustomerFinder:
             order_json = database_and_response_jsons.order_json(
                 customer.order_id, customer.pickup_loc, customer.drop_loc)
 
-            customer_and_order_json = database_and_response_jsons.customer_and_order_json(customer.customer, order_json)
+            customer_and_order_json = database_and_response_jsons.customer_and_order_json(
+                customer.customer, order_json.order)
 
             least_scored_customers.append(customer_and_order_json)
             i += 1

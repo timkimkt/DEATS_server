@@ -15,12 +15,9 @@ def create_user_json(user_info, password):
 # don't need active status: indicated by being put in the order status
 # don't need user type: all orders are requested by a customer
 # need status: delivered, pending, matched, and picked_up to keep track of order and delivery status
-def order_delivery_json(user_id, user_info, pickup_loc, drop_loc, get_code):
+def order_delivery_json(customer, pickup_loc, drop_loc, get_code):
     return {
-        "customer": {
-            "user_id": user_id,
-            "user_info": user_info
-        },
+        "customer": customer,
         "deliverer": None,
         "pickup_loc": pickup_loc,
         "drop_loc": drop_loc,

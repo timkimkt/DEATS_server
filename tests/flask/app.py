@@ -319,10 +319,11 @@ def order_delivery(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    customer_info = db.users.find_one({"_id": ObjectId(args["user_id"])}, {"user_info": 1, "_id": 0})
+    customer = db.users.find_one({"_id": ObjectId(args["user_id"])}, {"user_info": 1, "_id": 0})
+    customer["user_id"] = args["user_id"]
 
     order_id = db.orders.insert_one(
-        user_json.order_delivery_json(args["user_id"], customer_info,
+        user_json.order_delivery_json(customer,
                                       args["order"]["pickup_loc"], args["order"]["drop_loc"],
                                       args["order"]["GET_code"])).inserted_id
 
@@ -383,7 +384,7 @@ def make_delivery(args):
                                      delivery["leaving_from"], delivery["destination"])}, )
     print("modified: ", result.modified_count, " number of users")
 
-    customer_finder = CustomerFinder(delivery["destination"],
+    customer_finder = CustomerFinder(args["user_id"], delivery["destination"],
                                      db.orders.find(user_json.find_order_json()))
 
     customer_finder.sort_customers()
