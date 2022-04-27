@@ -46,20 +46,29 @@ def find_order_json():
     }
 
 
-def match_order_filter_json(order_id, order_status="pending"):
+def match_order_filter_json(order_id):
     return {
         "_id": order_id,
-        "order_status": order_status
+        "order_status": "pending"
     }
 
 
-def unmatch_order_filter_json(order_id, user_id, order_status="pending"):
+def unmatch_order_filter_json(order_id, user_id):
     return {
         "_id": order_id,
-        "order_status": order_status,
         "$or": [
-            {"deliverer.id": user_id},
-            {"customer.id": user_id}
+            {  # A deliverer should be able to unmatch from a delivery only when the order hasn't been cancelled
+                "$and": [
+                    {"deliverer.id": user_id},  # A deliverer should have permission to be able to unmatch
+                    {"order_status": {"$ne": "cancelled"}}
+                ]
+            },
+            {  # A customer should only be able to unmatch a deliverer when the order is still in a matched state
+                "$and": [
+                    {"customer.id": user_id},  # A customer should have permission to be able to unmatch
+                    {"order_status": "matched"}
+                ]
+            }
         ]
     }
 
@@ -123,9 +132,9 @@ def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_n
         "user": {
             "user_id": user_id,
             "user_info": {
-                    "email": net_id_email,
-                    "name": name,
-                    "phone_num": phone_num
+                "email": net_id_email,
+                "name": name,
+                "phone_num": phone_num
             }
         }
     }
