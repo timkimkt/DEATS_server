@@ -200,9 +200,7 @@ def make_get_order_status_response(succeeded, msg, order_status):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "order": {
-            "order_status": order_status
-        }
+        "order": order_status
     }
 
 
