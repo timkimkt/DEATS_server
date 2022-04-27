@@ -460,7 +460,7 @@ def match(args):
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
         return user_json.match_response_json(False, msg, None)
 
-    result = db.orders.update_one(user_json.match_order_json(ObjectId(args["order_id"])),
+    result = db.orders.update_one(user_json.match_unmatch_order_filter_json(ObjectId(args["order_id"])),
                                   {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
 
     if result.modified_count:
@@ -485,17 +485,23 @@ def unmatch(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    succeeded = db.orders.update_one(
-        user_json.match_order_json(ObjectId(args["order_id"])),
-        {"$set": user_json.match_unmatch_customer_json(order_status="pending")}, ).modified_count
+    # Check if the order exists
+    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    if not order:
+        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        return user_json.match_response_json(False, msg, None)
 
-    if succeeded:
+    result = db.orders.update_one(
+        user_json.match_unmatch_order_filter_json(ObjectId(args["order_id"]), order_status="matched"),
+        {"$set": user_json.match_unmatch_customer_json(order_status="pending")}, )
+
+    if result.modified_count:
         msg = "Request completed. Order with id, " + args["order_id"] + " is back to pending status"
 
     else:
         msg = "The request was unsuccessful. The order did not have a deliverer to unmatch"
 
-    return user_json.success_response_json(succeeded, msg)
+    return user_json.success_response_json(bool(result.modified_count), msg)
 
 
 @app.route("/orders/", methods=['POST'])

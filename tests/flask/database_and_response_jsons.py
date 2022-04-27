@@ -46,10 +46,10 @@ def find_order_json():
     }
 
 
-def match_order_json(order_id):
+def match_unmatch_order_filter_json(order_id, order_status="pending"):
     return {
         "_id": order_id,
-        "order_status": "pending"
+        "order_status": order_status
     }
 
 
