@@ -86,7 +86,7 @@ class UpdateOrderSchema(Schema):
 class MakeDelInfoSchema(Schema):
     leaving_from = fields.Nested(LocationSchema(), required=True)
     destination = fields.Nested(LocationSchema(), required=True)
-    num_deliveries = fields.Int(Missing=999)
+    num_deliveries = fields.Int(missing=999)
 
 
 class MakeDelSchema(Schema):
