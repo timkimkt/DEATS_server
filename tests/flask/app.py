@@ -2,7 +2,7 @@ import redis
 from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
-
+from os import getenv
 import tests.flask.database_and_response_jsons as user_json
 
 from bson.objectid import ObjectId
@@ -23,7 +23,7 @@ app = Flask(__name__)
 g_count = 0
 
 # Secret key for cryptographically signing session cookies (in bytes)
-app.secret_key = b'8&63^#J8]NIUBMCJXO_EJN'
+app.secret_key = getenv("SECRET_KEY")
 
 "Load configuration"
 SESSION_TYPE = "redis"
