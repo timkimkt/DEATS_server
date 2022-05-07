@@ -1,15 +1,16 @@
 from os import getenv
 from marshmallow import Schema, fields, EXCLUDE, RAISE
 
-
-print("Exclude value:", getenv("EXCLUDE_UNKNOWN"))
+# Set at global level since the server is restarted whenever the EXCLUDE_UNKNOWN configuration value changes
+UNKNOWN_VALUE = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes".lower() == "yes" else RAISE
+print("Unknown field behavior:", UNKNOWN_VALUE)
 
 
 class UserIdSchema(Schema):
     user_id = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes".lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class CreateAccUserInfoSchema(Schema):
@@ -18,8 +19,7 @@ class CreateAccUserInfoSchema(Schema):
     phone_num = fields.Str(load_only=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
-        print("Create", unknown)
+        unknown = UNKNOWN_VALUE
 
 
 class CreateAccSchema(Schema):
@@ -28,7 +28,7 @@ class CreateAccSchema(Schema):
     test = fields.Bool(missing=False)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateAccUserInfoSchema(Schema):
@@ -36,7 +36,7 @@ class UpdateAccUserInfoSchema(Schema):
     phone_num = fields.Str(load_only=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateAccUserSchema(Schema):
@@ -44,21 +44,21 @@ class UpdateAccUserSchema(Schema):
     user_info = fields.Nested(UpdateAccUserInfoSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateAccSchema(Schema):
     user = fields.Nested(UpdateAccUserSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class EmailSchema(Schema):
     email = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class LoginSchema(Schema):
@@ -66,7 +66,7 @@ class LoginSchema(Schema):
     password = fields.Field(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class CoordinatesSchema(Schema):
@@ -74,7 +74,7 @@ class CoordinatesSchema(Schema):
     long = fields.Float(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class LocationSchema(Schema):
@@ -82,7 +82,7 @@ class LocationSchema(Schema):
     coordinates = fields.Nested(CoordinatesSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class OrderDelInfoSchema(Schema):
@@ -91,7 +91,7 @@ class OrderDelInfoSchema(Schema):
     GET_code = fields.Str(missing=None)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class OrderDelSchema(Schema):
@@ -99,7 +99,7 @@ class OrderDelSchema(Schema):
     order = fields.Nested(OrderDelInfoSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateCoordinatesSchema(Schema):
@@ -107,7 +107,7 @@ class UpdateCoordinatesSchema(Schema):
     long = fields.Float(load_only=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateLocationSchema(Schema):
@@ -115,7 +115,7 @@ class UpdateLocationSchema(Schema):
     coordinates = fields.Nested(UpdateCoordinatesSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateOrderInfoSchema(Schema):
@@ -125,7 +125,7 @@ class UpdateOrderInfoSchema(Schema):
     GET_code = fields.Str(load_only=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UpdateOrderSchema(Schema):
@@ -133,7 +133,7 @@ class UpdateOrderSchema(Schema):
     order = fields.Nested(UpdateOrderInfoSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class MakeDelInfoSchema(Schema):
@@ -142,7 +142,7 @@ class MakeDelInfoSchema(Schema):
     num_deliveries = fields.Int(missing=999)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class MakeDelSchema(Schema):
@@ -150,14 +150,14 @@ class MakeDelSchema(Schema):
     delivery = fields.Nested(MakeDelInfoSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class OrderIdSchema(Schema):
     order_id = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UserIdOrderIdSchema(Schema):
@@ -165,7 +165,7 @@ class UserIdOrderIdSchema(Schema):
     order_id = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UserInfoSchema(Schema):
@@ -174,7 +174,7 @@ class UserInfoSchema(Schema):
     phone_num = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UserSchema(Schema):
@@ -182,7 +182,7 @@ class UserSchema(Schema):
     user_info = fields.Nested(UserInfoSchema(), required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class MatchOrderSchema(Schema):
@@ -190,13 +190,13 @@ class MatchOrderSchema(Schema):
     order_id = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
 class UnmatchOrderSchema(Schema):
     order_id = fields.Str(required=True)
 
     class Meta:
-        unknown = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
+        unknown = UNKNOWN_VALUE
 
 
