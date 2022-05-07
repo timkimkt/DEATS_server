@@ -88,7 +88,7 @@ def create_account(args):
 
 
 @app.route("/update_acc/", methods=['POST'])
-@use_args(UpdateAccSchema())
+@use_args(UpdateAccSchema(), unknown=None)
 def update_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -114,7 +114,7 @@ def update_account(args):
 
 
 @app.route("/delete_acc/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def delete_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -131,7 +131,7 @@ def delete_account(args):
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def deactivate_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -155,7 +155,7 @@ def deactivate_account(args):
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def reactivate_account(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -248,7 +248,7 @@ def sso_logout():
 
 
 @app.route("/login/", methods=['POST'])
-@use_args(LoginSchema())
+@use_args(LoginSchema(), unknown=None)
 def login(args):
     succeeded = False
     user_id = None
@@ -287,7 +287,7 @@ def login(args):
 
 
 @app.route("/logout/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def logout(args):
     if session.pop("user_id", default=None) == args["user_id"]:
         succeeded = True
@@ -315,7 +315,7 @@ def global_count():
 
 
 @app.route("/order_del/", methods=['POST'])
-@use_args(OrderDelSchema())
+@use_args(OrderDelSchema(), unknown=None)
 def order_delivery(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -344,7 +344,7 @@ def order_delivery(args):
 
 
 @app.route("/update_order/", methods=['POST'])
-@use_args(UpdateOrderSchema())
+@use_args(UpdateOrderSchema(), unknown=None)
 def update_order(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -374,7 +374,7 @@ def update_order(args):
 
 
 @app.route("/make_del/", methods=['POST'])
-@use_args(MakeDelSchema())
+@use_args(MakeDelSchema(), unknown=None)
 def make_delivery(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -401,7 +401,7 @@ def make_delivery(args):
 
 
 @app.route("/my_deliverer/", methods=['POST'])
-@use_args(OrderIdSchema())
+@use_args(OrderIdSchema(), unknown=None)
 def get_my_deliverer(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -426,7 +426,7 @@ def get_my_deliverer(args):
 
 
 @app.route("/order_status/", methods=['POST'])
-@use_args(UserIdOrderIdSchema())
+@use_args(UserIdOrderIdSchema(), unknown=None)
 def get_order_status(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -451,7 +451,7 @@ def get_order_status(args):
 
 
 @app.route("/match/", methods=['POST'])
-@use_args(MatchOrderSchema())
+@use_args(MatchOrderSchema(), unknown=None)
 def match(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -492,7 +492,7 @@ def match(args):
 
 
 @app.route("/unmatch/", methods=['POST'])
-@use_args(UserIdOrderIdSchema())
+@use_args(UserIdOrderIdSchema(), unknown=None)
 def unmatch(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -525,7 +525,7 @@ def unmatch(args):
 
 
 @app.route("/cancel_order/", methods=['POST'])
-@use_args(UserIdOrderIdSchema())
+@use_args(UserIdOrderIdSchema(), unknown=None)
 def cancel_order(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -559,7 +559,7 @@ def cancel_order(args):
 
 
 @app.route("/orders/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def show_orders(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
@@ -571,7 +571,7 @@ def show_orders(args):
 
 
 @app.route("/deliveries/", methods=['POST'])
-@use_args(UserIdSchema())
+@use_args(UserIdSchema(), unknown=None)
 def show_deliveries(args):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
