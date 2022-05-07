@@ -33,11 +33,18 @@ SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138f
 app.config.from_object(__name__)
 Session(app)
 
-cas_client = CASClient(
-    version=3,
-    service_url="https://deats-backend-test.herokuapp.com/sso_login",
-    server_url="https://login.dartmouth.edu/cas/"
-)
+cas_client = None
+
+
+# set up cas client using host url presented at first request
+@app.before_first_request
+def before_first_request_func():
+    global cas_client
+    cas_client = CASClient(
+        version=3,
+        service_url=request.host_url + "sso_login",
+        server_url="https://login.dartmouth.edu/cas/"
+    )
 
 
 @app.route('/')
