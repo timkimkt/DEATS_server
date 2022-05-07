@@ -1,4 +1,6 @@
 import redis
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
 from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
@@ -13,7 +15,7 @@ from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
-
+from flask_apispec import FlaskApiSpec
 from webargs.flaskparser import use_args
 from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
     UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema
@@ -22,7 +24,7 @@ db = MongoClientConnection.get_database()
 app = Flask(__name__)
 g_count = 0
 
-# Secret key for cryptographically signing session cookies (in bytes)
+# Secret key for cryptographically signing session cookies (Value is in bytes)
 app.secret_key = getenv("SECRET_KEY")
 
 "Load configuration"
@@ -32,6 +34,20 @@ SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138f
 
 app.config.from_object(__name__)
 Session(app)
+
+# Set up documentation for endpoints
+app.config.update({
+    'APISPEC_SPEC': APISpec(
+        title="DEATS Server API Reference",
+        version="2.0.0",
+        plugins=[MarshmallowPlugin()],
+        openapi_version="3.0.2"
+    ),
+    'APISPEC_SWAGGER_URL': '/DEATS-server-api-json/',
+    'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
+})
+
+docs = FlaskApiSpec(app)
 
 cas_client = None
 
@@ -509,7 +525,7 @@ def unmatch(args):
         msg = "The order with id, " + args["order_id"] + ", doesn't exist"
         return user_json.success_response_json(False, msg)
 
-    #if order["customer"]["user_id"] == args["user_id"] and (args["order_status"] != "matched" or )
+    # if order["customer"]["user_id"] == args["user_id"] and (args["order_status"] != "matched" or )
 
     result = db.orders.update_one(
         user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"]),
@@ -592,3 +608,10 @@ def handle_error(err):
         return user_json.validation_errors_json(messages), err.code, headers
     else:
         return user_json.validation_errors_json(messages), err.code
+
+
+docs.register(create_account)
+docs.register(show_users)
+docs.register(show_orders)
+
+
