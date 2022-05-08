@@ -15,10 +15,10 @@ from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
-from flask_apispec import FlaskApiSpec
+from flask_apispec import FlaskApiSpec, doc, marshal_with
 from webargs.flaskparser import use_args
 from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
-    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema
+    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema, CreateAccResponseSchema
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -70,6 +70,8 @@ def index():
 
 @app.route("/create_acc/", methods=['POST'])
 @use_args(CreateAccSchema())
+@marshal_with(CreateAccResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for creating an account for a new user", tags=['Account'])
 def create_account(args):
     try:
         valid_email = validate_email(args["user_info"]["email"])
@@ -613,5 +615,3 @@ def handle_error(err):
 docs.register(create_account)
 docs.register(show_users)
 docs.register(show_orders)
-
-

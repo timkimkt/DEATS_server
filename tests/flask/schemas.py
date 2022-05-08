@@ -200,3 +200,14 @@ class UnmatchOrderSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+# Response schemas
+class CreateAccResponseSchema(Schema):
+    succeeded = fields.Str(required=True)
+    msg = fields.Str(required=True)
+    user = fields.Nested(UserIdSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+
