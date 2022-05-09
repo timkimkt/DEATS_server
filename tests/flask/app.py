@@ -485,9 +485,9 @@ def match(**kwargs):
         msg = "You created this order. You can't self-match"
         return json.match_response_json(False, msg, None)
 
-    # Ensure the order hasn't been cancelled
-    if order["order_status"] == "cancelled":
-        msg = "The order with id, " + kwargs["order_id"] + ", has been cancelled by the customer"
+    # Ensure the order hasn't been canceled
+    if order["order_status"] == "canceled":
+        msg = "The order with id, " + kwargs["order_id"] + ", has been canceled by the customer"
         return json.match_response_json(False, msg, None)
 
     result = db.orders.update_one(json.match_order_filter_json(ObjectId(kwargs["order_id"])),
@@ -524,6 +524,17 @@ def unmatch(**kwargs):
 
     # if order["customer"]["user_id"] == session["user_id and (kwargs["order_status"] != "matched" or )
 
+    # Ensure the deliverer can be unmatched from the order
+    # Customers can unmatch a deliverer from an order only if the order is not canceled and not past pending
+    if order["customer"]["user_id"] == session["user_id"] and order["order_status"] != "pending":
+        if order["order_status"] == "canceled":
+            msg = "The request was unsuccessful. The order was canceled"
+
+        else:
+            msg = "You can't unmatch the deliverer, they're on their way"
+
+        return json.success_response_json(False, msg)
+
     result = db.orders.update_one(
         json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="pending")}, )
@@ -556,23 +567,23 @@ def cancel_order(**kwargs):
         msg = "You don't have permission to cancel this order"
         return json.success_response_json(False, msg)
 
-    # Ensure the order is cancellable.
-    # Note: orders in progress cannot be cancelled
+    # Ensure the order is cancelable.
+    # Note: orders in progress cannot be canceled
     if order["order_status"] != "pending":
-        if order["order_status"] == "cancelled":
-            msg = "The request was unsuccessful. The order has already been cancelled"
+        if order["order_status"] == "canceled":
+            msg = "The request was unsuccessful. The order has already been canceled"
 
         else:
-            msg = "This order is no more cancellable. The deliverer is bringing your food"
+            msg = "This order is no more cancelable. The deliverer is bringing your food"
 
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
         json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
-        {"$set": json.match_unmatch_customer_json(order_status="cancelled")}, )
+        {"$set": json.match_unmatch_customer_json(order_status="canceled")}, )
 
     if result.modified_count:  # Check for order cancellation
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " has been cancelled"
+        msg = "Request completed. Order with id, " + kwargs["order_id"] + " has been canceled"
 
     else:
         msg = "Request unsuccessful"
