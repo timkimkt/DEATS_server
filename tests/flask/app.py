@@ -432,6 +432,8 @@ def get_my_deliverer(**kwargs):
 
     deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"deliverer.deliverer_info": 1, "_id": 0})
 
+    print("deliverer_info:", deliverer_info)
+
     if deliverer_info:
         succeeded = True
         msg = "Deliverer found!"
