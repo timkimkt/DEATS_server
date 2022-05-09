@@ -404,11 +404,10 @@ def update_order(**kwargs):
 @use_kwargs(MakeDelSchema())
 @marshal_with(StartDelResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for requesting to make a delivery", tags=['Orders'])
-def make_delivery(**kwargs):
+def make_delivery(delivery, **kwargs):
     login_check()
     acc_status_check()
 
-    delivery = kwargs["delivery"]
     result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": json.make_delivery_json(
                                      delivery["leaving_from"], delivery["destination"])}, )

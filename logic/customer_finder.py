@@ -23,7 +23,9 @@ class CustomerFinder:
 
     def sort_customers(self):
         for order_json in self.orders:
-            if order_json["customer"]["user_id"] != self.deliverer.user_id:
+            print("customer id:", order_json["customer"]["user_id"])
+            print("deliverer id:", self.deliverer.user_id)
+            if order_json["customer"]["user_id"] == self.deliverer.user_id:
                 continue
 
             print("order: ", order_json)
