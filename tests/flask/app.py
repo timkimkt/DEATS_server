@@ -73,8 +73,8 @@ def index():
 def create_account(**kwargs):
     try:
         valid_email = validate_email(kwargs["user_info"]["email"])
-        user = db.users.find_one({"user_info": {"email": valid_email.email}})
-        print("email_check", user)
+        user = db.users.find_one({"user_info.email": valid_email.email})
+        print("user:", user)
         if user:
             msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
                   "different email address"
@@ -286,30 +286,26 @@ def login(**kwargs):
 
     try:
         valid_email = validate_email(kwargs["user_info"]["email"])
-        user = db.users.find_one({"user_info": {"email": valid_email.email}})
+        user = db.users.find_one({"user_info.email": valid_email.email})
         print("email_check", user)
         if not user:
             msg = "The Dartmouth email provided does not exist on the server"
 
+        elif user["password"] != kwargs["password"]:
+            msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
+
         else:
-            user = db.users.find_one({"user_info": {"email": valid_email.email}, "password": kwargs["password"]})
-            print("password_check", user)
-            if not user:
-                msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
+            succeeded = True
+            msg = "Yayy, the user exists!"
+            user_id = str(user["_id"])
+            user_info = user["user_info"]
+            acc_active = user["acc_active"]
 
-            else:
-                print(user)
-                succeeded = True
-                msg = "Yayy, the user exists!"
-                user_id = str(user["_id"])
-                user_info = user["user_info"]
-                acc_active = user["acc_active"]
+            # save user session
+            session["user_id"] = user_id
 
-                # save user session
-                session["user_id"] = user_id
-
-                # save account active status for easy access later on
-                session["acc_active"] = user.get("acc_active")
+            # save account active status for easy access later on
+            session["acc_active"] = user.get("acc_active")
 
         return json.login_response_json(succeeded, msg, user_id, user_info, acc_active)
 

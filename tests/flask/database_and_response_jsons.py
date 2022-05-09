@@ -115,14 +115,16 @@ def match_unmatch_customer_json(user_id=None, user_info=None, order_status="matc
 
 # ------------- JSON responses ------------- #
 def login_response_json(succeeded, msg, user_id, user_info, acc_active):
+    user = {
+        "user_id": user_id,
+        "acc_active": acc_active,
+        "user_info": user_info
+    } if user_id else None
+
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "user": {
-            "user_id": user_id,
-            "acc_active": acc_active,
-            "user_info": user_info
-        }
+        "user": user
     }
 
 
