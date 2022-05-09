@@ -532,7 +532,7 @@ def unmatch(**kwargs):
         msg = "Request completed. Order with id, " + kwargs["order_id"] + " is back to pending status"
 
     else:
-        msg = "The request was unsuccessful. The order did not have a deliverer to unmatch"
+        msg = "The request was unsuccessful. The order did not have a deliverer to unmatch from"
 
     return json.success_response_json(bool(result.modified_count), msg)
 
@@ -551,18 +551,31 @@ def cancel_order(**kwargs):
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return json.success_response_json(False, msg)
 
+    # Ensure the user has permission to cancel the order
+    if order["customer"]["user_id"] != session["user_id"]:
+        msg = "You don't have permission to cancel this order"
+        return json.success_response_json(False, msg)
+
+    # Ensure the order is cancellable.
+    # Note: orders in progress cannot be cancelled
+    if order["order_status"] != "pending":
+        if order["order_status"] == "cancelled":
+            msg = "The request was unsuccessful. The order has already been cancelled"
+
+        else:
+            msg = "This order is no more cancellable. The deliverer is bringing your food"
+
+        return json.success_response_json(False, msg)
+
     result = db.orders.update_one(
         json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="cancelled")}, )
 
-    if not result.matched_count:  # Ensure the user has permission to cancel the order
-        msg = "You don't have permission to cancel this order"
-
-    elif result.modified_count:  # Check for order cancellation
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " cancelled"
+    if result.modified_count:  # Check for order cancellation
+        msg = "Request completed. Order with id, " + kwargs["order_id"] + " has been cancelled"
 
     else:
-        msg = "The request was unsuccessful. The order has already been cancelled"
+        msg = "Request unsuccessful"
 
     return json.success_response_json(bool(result.modified_count), msg)
 
