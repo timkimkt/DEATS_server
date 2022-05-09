@@ -6,3 +6,4 @@ python-cas
 redis
 email-validator
 password_strength
+flask-apispec==0.11.0
