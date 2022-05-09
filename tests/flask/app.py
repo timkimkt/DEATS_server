@@ -326,7 +326,7 @@ def logout(**kwargs):
         msg = "The user with id, " + user_id + ", has been logged out"
     else:
         succeeded = False
-        msg = "The request was unsuccessful"
+        msg = "The request was unsuccessful. The user has already been logged out"
 
     return json.success_response_json(succeeded, msg)
 
