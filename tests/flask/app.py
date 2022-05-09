@@ -15,7 +15,7 @@ from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
-from flask_apispec import FlaskApiSpec, doc, marshal_with
+from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from webargs.flaskparser import use_args
 from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
     UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema, CreateAccResponseSchema
@@ -69,12 +69,12 @@ def index():
 
 
 @app.route("/create_acc/", methods=['POST'])
-@use_args(CreateAccSchema())
+@use_kwargs(CreateAccSchema())
 @marshal_with(CreateAccResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for creating an account for a new user", tags=['Account'])
-def create_account(args):
+def create_account(**kwargs):
     try:
-        valid_email = validate_email(args["user_info"]["email"])
+        valid_email = validate_email(kwargs["user_info"]["email"])
         user = db.users.find_one({"user_info": {"email": valid_email.email}})
         print("email_check", user)
         if user:
@@ -82,14 +82,14 @@ def create_account(args):
                   "different email address"
             return user_json.create_acc_response_json(False, msg)
 
-        elif args["password"]:
+        elif kwargs["password"]:
             # strong password creation is a pain, so allow developers to test without password validation
-            if not args["test"]:
-                validate_password(args["password"])
+            if not kwargs["test"]:
+                validate_password(kwargs["password"])
 
-            args["user_info"]["email"] = valid_email.email
+            kwargs["user_info"]["email"] = valid_email.email
             result = db.users.insert_one(
-                user_json.create_user_json(args["user_info"], args["password"]))
+                user_json.create_user_json(kwargs["user_info"], kwargs["password"]))
             msg = "User deets are now on the server"
 
             # save user session
