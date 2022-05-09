@@ -101,7 +101,12 @@ def show_deliveries_response_json(deliveries):
     }
 
 
-def match_unmatch_customer_json(deliverer=None, order_status="matched"):
+def match_unmatch_customer_json(user_id=None, user_info=None, order_status="matched"):
+    deliverer = {
+        "user_id": user_id,
+        "user_info": user_info
+    } if user_id else None
+
     return {
         "deliverer": deliverer,
         "order_status": order_status
@@ -200,7 +205,7 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
-def make_get_my_deliverer_response(succeeded, msg, deliverer_info):
+def get_my_deliverer_response(succeeded, msg, deliverer_info):
     return {
         "succeeded": succeeded,
         "msg": msg,

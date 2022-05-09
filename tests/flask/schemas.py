@@ -161,16 +161,8 @@ class UserInfoSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UserSchema(Schema):
-    user_id = fields.Str(required=True)
-    user_info = fields.Nested(UserInfoSchema(), required=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
 class MatchOrderSchema(Schema):
-    user = fields.Nested(UserSchema(), required=True)
+    user_info = fields.Nested(UserInfoSchema(), required=True)
     order_id = fields.Str(required=True)
 
     class Meta:

@@ -434,15 +434,15 @@ def get_my_deliverer(**kwargs):
 
     print("deliverer_info:", deliverer_info)
 
-    if deliverer_info:
+    if deliverer_info is not None:
         succeeded = True
-        msg = "Deliverer found!"
+        msg = "Deliverer found!" if len(deliverer_info) else "No deliverer for this order yet. Check again later"
 
     else:
         succeeded = False
-        msg = "No deliverer for this order yet. Check again later"
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
 
-    return json.make_get_my_deliverer_response(succeeded, msg, deliverer_info)
+    return json.get_my_deliverer_response(succeeded, msg, deliverer_info)
 
 
 @app.route("/order_status/", methods=['POST'])
@@ -481,7 +481,7 @@ def match(**kwargs):
         return json.match_response_json(False, msg, None)
 
     # Prevent self-matching
-    if order["customer"]["user_id"] == kwargs["user"]["user_id"]:
+    if order["customer"]["user_id"] == session["user_id"]:
         msg = "You created this order. You can't self-match"
         return json.match_response_json(False, msg, None)
 
@@ -491,16 +491,21 @@ def match(**kwargs):
         return json.match_response_json(False, msg, None)
 
     result = db.orders.update_one(json.match_order_filter_json(ObjectId(kwargs["order_id"])),
-                                  {"$set": json.match_unmatch_customer_json(kwargs["user"])}, )
+                                  {"$set": json.match_unmatch_customer_json(session["user_id"], kwargs["user_info"])}, )
 
+    customer = order["customer"]
     if result.modified_count:
-        msg = "Request completed. You've been matched with the order"
+        msg = "Request completed. You've been matched with the customer on the order"
+
+    elif order["deliverer"]["user_id"] == session["user_id"]:
+        msg = "You've already matched with the customer on this order"
 
     else:
-        msg = "Request not completed. The order has already been matched"
+        msg = "Request not completed. The customer on the order has already been matched with someone else"
+        customer = None
 
     # Returns the current user info of the customer in case they updated their info before the match
-    return json.match_response_json(bool(result.modified_count), msg, order["customer"])
+    return json.match_response_json(bool(result.modified_count), msg, customer)
 
 
 @app.route("/unmatch/", methods=['POST'])
