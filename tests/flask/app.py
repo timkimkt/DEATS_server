@@ -320,9 +320,10 @@ def login(**kwargs):
 def logout(**kwargs):
     login_check()
 
-    if session.pop("user_id", default=None):
+    user_id = session.pop("user_id", default=None)
+    if user_id:
         succeeded = True
-        msg = "The user with id, " + session["user_id"] + ", has been logged out"
+        msg = "The user with id, " + user_id + ", has been logged out"
     else:
         succeeded = False
         msg = "The request was unsuccessful"
