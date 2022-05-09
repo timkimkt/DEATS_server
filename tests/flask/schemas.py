@@ -102,26 +102,10 @@ class OrderDelSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UpdateCoordinatesSchema(Schema):
-    lat = fields.Float(load_only=True)
-    long = fields.Float(load_only=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
-class UpdateLocationSchema(Schema):
-    name = fields.Str(load_only=True)
-    coordinates = fields.Nested(UpdateCoordinatesSchema(), required=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
 class UpdateOrderInfoSchema(Schema):
     order_id = fields.Str(required=True)
-    pickup_loc = fields.Nested(UpdateLocationSchema(), load_only=True)
-    drop_loc = fields.Nested(UpdateLocationSchema(), load_only=True)
+    pickup_loc = fields.Nested(LocationSchema(), load_only=True)
+    drop_loc = fields.Nested(LocationSchema(), load_only=True)
     GET_code = fields.Str(load_only=True)
 
     class Meta:
@@ -212,7 +196,16 @@ class UserInfoResponseSchema(Schema):
 
 class UserResponseSchema(Schema):
     user_id = fields.Str(required=True)
+    acc_active = fields.Bool(required=True)
     user_info = fields.Nested(UserInfoResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class UserIdAccStatusSchema(Schema):
+    user_id = fields.Str(required=True)
+    acc_active = fields.Bool(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -221,7 +214,7 @@ class UserResponseSchema(Schema):
 class CreateAccResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    user = fields.Nested(UserIdSchema(), required=True)
+    user = fields.Nested(UserIdAccStatusSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -274,10 +267,17 @@ class GetDelivererResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class OrderStatusSchema(Schema):
+    order_status = fields.Int(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class GetOrderStatusResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    order_status = fields.Str(required=True)
+    order = fields.Nested(OrderStatusSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE

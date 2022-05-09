@@ -109,18 +109,20 @@ def match_unmatch_customer_json(deliverer=None, order_status="matched"):
 
 
 # ------------- JSON responses ------------- #
-def login_response_json(succeeded, msg, user_id, user_info):
+def login_response_json(succeeded, msg, user_id, user_info, acc_active):
     return {
         "succeeded": succeeded,
         "msg": msg,
         "user": {
             "user_id": user_id,
+            "acc_active": acc_active,
             "user_info": user_info
         }
     }
 
 
-def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_num, is_new_login, authentication_date):
+def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
+                            net_id_email, phone_num, is_new_login, authentication_date):
     return {
         "succeeded": succeeded,
         "msg": msg,
@@ -128,6 +130,7 @@ def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_n
         "authentication_date": authentication_date,
         "user": {
             "user_id": user_id,
+            "acc_active": acc_active,
             "user_info": {
                 "email": net_id_email,
                 "name": name,
@@ -137,12 +140,13 @@ def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_n
     }
 
 
-def create_acc_response_json(succeeded, msg, user_id=None):
+def create_acc_response_json(succeeded, msg, user_id=None, acc_active=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
         "user": {
             "user_id": user_id,
+            "acc_active": acc_active
         }
     }
 

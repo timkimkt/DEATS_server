@@ -89,14 +89,16 @@ def create_account(**kwargs):
                 user_json.create_user_json(kwargs["user_info"], kwargs["password"]))
             msg = "User deets are now on the server"
 
-            # save user session
             user_id = str(result.inserted_id)
+            acc_active = True
+
+            # save user session
             session["user_id"] = user_id
 
             # save account active status for easy access later on
-            session["acc_active"] = True
+            session["acc_active"] = acc_active
 
-            return user_json.create_acc_response_json(True, msg, user_id)
+            return user_json.create_acc_response_json(True, msg, user_id, acc_active)
 
     except ValueError as err:
         return user_json.create_acc_response_json(False, str(err))
@@ -232,6 +234,7 @@ def sso_login():
             msg = "You've logged into DEATS successfully through Dartmouth SSO"
             print(result_find)
             user_id = str(result_find["_id"])
+            acc_active = result_find["acc_active"]
             name = result_find["user_info"]["name"]
             phone_num = result_find["user_info"]["phone_num"]
 
@@ -243,10 +246,11 @@ def sso_login():
             result_insert = db.users.insert_one(user_json.create_user_json(net_id_email, name))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
+            acc_active = True
             phone_num = None
 
             # save account active status for easy access later on
-            session["acc_active"] = True
+            session["acc_active"] = acc_active
 
         # save user session
         session["user_id"] = user_id
@@ -254,6 +258,7 @@ def sso_login():
         return user_json.sso_login_response_json(True,
                                                  msg,
                                                  user_id,
+                                                 acc_active,
                                                  name,
                                                  net_id_email,
                                                  phone_num,
@@ -282,6 +287,7 @@ def login(**kwargs):
     succeeded = False
     user_id = None
     user_info = None
+    acc_active = None
 
     try:
         valid_email = validate_email(kwargs["user_info"]["email"])
@@ -302,6 +308,7 @@ def login(**kwargs):
                 msg = "Yayy, the user exists!"
                 user_id = str(user["_id"])
                 user_info = user["user_info"]
+                acc_active = user["acc_active"]
 
                 # save user session
                 session["user_id"] = user_id
@@ -309,7 +316,7 @@ def login(**kwargs):
                 # save account active status for easy access later on
                 session["acc_active"] = user.get("acc_active")
 
-        return user_json.login_response_json(succeeded, msg, user_id, user_info)
+        return user_json.login_response_json(succeeded, msg, user_id, user_info, acc_active)
 
     except ValueError as err:
         return user_json.success_response_json(False, str(err))
