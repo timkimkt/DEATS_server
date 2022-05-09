@@ -268,7 +268,7 @@ class GetDelivererResponseSchema(Schema):
 
 
 class OrderStatusSchema(Schema):
-    order_status = fields.Int(required=True)
+    order_status = fields.Str(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
