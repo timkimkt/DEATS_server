@@ -41,7 +41,7 @@ app.config.update({
         title="DEATS Server API Reference",
         version="2.0.0",
         plugins=[MarshmallowPlugin()],
-        openapi_version="3.0.2"
+        openapi_version="2.0.0"
     ),
     'APISPEC_SWAGGER_URL': '/DEATS-server-api-json/',
     'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
