@@ -110,7 +110,9 @@ def create_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating an existing account", tags=['Account'])
 def update_account(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     succeeded = 0
     for key, value in kwargs.items():
@@ -136,7 +138,9 @@ def update_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deleting an existing account", tags=['Account'])
 def delete_account(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     result = db.users.delete_one({"_id": ObjectId(session["user_id"])})
     if result.deleted_count:
@@ -153,7 +157,11 @@ def delete_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deactivating an existing account", tags=['Account'])
 def deactivate_account(**kwargs):
-    login_check()
+    login_failed = login_failed = login_check()
+    if login_failed:
+        return login_failed
+    if login_failed:
+        return login_failed
 
     result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": {"acc_active": False}}, )
@@ -177,7 +185,9 @@ def deactivate_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for reactivating an existing account in a deactivated state", tags=['Account'])
 def reactivate_account(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": {"acc_active": True}}, )
@@ -264,7 +274,9 @@ def sso_login():
 @marshal_with(None, code=200, description="Response json")
 @doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
 def sso_logout():
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     logout_url = cas_client.get_logout_url()
     print("logout_url", logout_url)
@@ -318,7 +330,9 @@ def login(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for logging a user out of a non-SSO account", tags=['Account'])
 def logout(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     user_id = session.pop("user_id", default=None)
     if user_id:
@@ -351,8 +365,12 @@ def global_count():
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for ordering a delivery", tags=["Orders"])
 def order_delivery(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
     customer["user_id"] = session["user_id"]
@@ -376,8 +394,12 @@ def order_delivery(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating an existing order", tags=['Orders'])
 def update_order(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     succeeded = 0
     order_id = kwargs["order"]["order_id"]
@@ -402,8 +424,12 @@ def update_order(**kwargs):
 @marshal_with(StartDelResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for requesting to make a delivery", tags=['Orders'])
 def make_delivery(delivery, **kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": json.make_delivery_json(
@@ -424,8 +450,12 @@ def make_delivery(delivery, **kwargs):
 @marshal_with(GetDelivererResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting the current deliverer for an existing order", tags=['Orders'])
 def get_my_deliverer(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"deliverer.deliverer_info": 1, "_id": 0})
 
@@ -447,8 +477,12 @@ def get_my_deliverer(**kwargs):
 @marshal_with(GetOrderStatusResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting the order status of an existing order", tags=['Orders'])
 def get_order_status(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     order_status = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"order_status": 1, "_id": 0})
 
@@ -468,8 +502,15 @@ def get_order_status(**kwargs):
 @marshal_with(MatchResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for matching a deliverer with an existing order", tags=['Orders'])
 def match(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
+    if status_check_failed:
+        return status_check_failed
 
     # Check if the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
@@ -510,8 +551,12 @@ def match(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for un-matching a deliverer from an existing order", tags=['Orders'])
 def unmatch(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     # Check if the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
@@ -550,8 +595,12 @@ def unmatch(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for canceling an existing order. Accessible to only the order creator", tags=['Orders'])
 def cancel_order(**kwargs):
-    login_check()
-    acc_status_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
+    status_check_failed = acc_status_check()
+    if status_check_failed:
+        return status_check_failed
 
     # Check if the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
@@ -593,7 +642,9 @@ def cancel_order(**kwargs):
 @marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing orders", tags=['Orders'])
 def show_orders(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     cursor = db.orders.find(json.show_orders_input_json(session["user_id"]))
 
@@ -605,7 +656,9 @@ def show_orders(**kwargs):
 @marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing deliveries", tags=['Orders'])
 def show_deliveries(**kwargs):
-    login_check()
+    login_failed = login_check()
+    if login_failed:
+        return login_failed
 
     cursor = db.orders.find(json.show_deliveries_input_json(session["user_id"]))
 
