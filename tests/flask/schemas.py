@@ -24,7 +24,7 @@ class CreateAccUserInfoSchema(Schema):
 
 class CreateAccSchema(Schema):
     user_info = fields.Nested(CreateAccUserInfoSchema(), required=True)
-    password = fields.Field(required=True)
+    password = fields.Str(required=True)
     test = fields.Bool(missing=False)
 
     class Meta:
@@ -63,7 +63,7 @@ class EmailSchema(Schema):
 
 class LoginSchema(Schema):
     user_info = fields.Nested(EmailSchema(), required=True)
-    password = fields.Field(required=True)
+    password = fields.Str(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
