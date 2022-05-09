@@ -26,7 +26,7 @@ class CustomerFinder:
             if order_json["customer"]["user_id"] != self.deliverer.user_id:
                 continue
 
-            print("customer: ", order_json)
+            print("order: ", order_json)
 
             score = self.compute_score(
                 order_json["pickup_loc"]["coordinates"], order_json["drop_loc"]["coordinates"])
@@ -50,7 +50,7 @@ class CustomerFinder:
                 customer.order_id, customer.pickup_loc, customer.drop_loc)
 
             customer_and_order_json = database_and_response_jsons.customer_and_order_json(
-                customer.customer, order_json.order)
+                customer.customer, order_json["order"])
 
             least_scored_customers.append(customer_and_order_json)
             i += 1
