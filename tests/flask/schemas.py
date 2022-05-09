@@ -224,7 +224,7 @@ class LoginResponseSchema(Schema):
 class SSOLoginResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    is_new_login = fields.Int(required=True)
+    is_new_login = fields.Str(required=True)
     authentication_date = fields.Str(required=True)
     user = fields.Nested(UserResponseSchema(), required=True)
 
