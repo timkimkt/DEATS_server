@@ -4,21 +4,18 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
-from os import getenv
 import tests.flask.database_and_response_jsons as user_json
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session, url_for, jsonify
+from flask import Flask, request, session, url_for
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
-from webargs.flaskparser import use_args
-from tests.flask.schemas import UserIdSchema, CreateAccSchema, UpdateAccSchema, LoginSchema, OrderDelSchema, \
-    UpdateOrderSchema, MakeDelSchema, OrderIdSchema, UserIdOrderIdSchema, MatchOrderSchema, CreateAccResponseSchema
+from tests.flask.schemas import *
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -106,22 +103,24 @@ def create_account(**kwargs):
 
 
 @app.route("/update_acc/", methods=['POST'])
-@use_args(UpdateAccSchema(), unknown=None)
-def update_account(args):
+@use_kwargs(UpdateAccSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for updating an existing account", tags=['Account'])
+def update_account(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
     succeeded = 0
-    for key, value in args.items():
+    for key, value in kwargs.items():
         if key == "password":
             try:
-                validate_password(args["password"])
+                validate_password(kwargs["password"])
 
             except ValueError as err:
                 return user_json.success_response_json(False, str(err))
 
-        result = db.users.update_one({"_id": ObjectId(args["user_id"])},
+        result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
                                      {"$set": {key: value}})
         succeeded = max(succeeded, result.modified_count)
 
@@ -132,70 +131,78 @@ def update_account(args):
 
 
 @app.route("/delete_acc/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def delete_account(args):
+@use_kwargs(UserIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for deleting an existing account", tags=['Account'])
+def delete_account(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.delete_one({"_id": ObjectId(args["user_id"])})
+    result = db.users.delete_one({"_id": ObjectId(kwargs["user_id"])})
     if result.deleted_count:
-        msg = "User with id, " + args["user_id"] + ", has been deleted from the server"
+        msg = "User with id, " + kwargs["user_id"] + ", has been deleted from the server"
         session.pop("user_id", default=None)
 
     else:
-        msg = "Request unsuccessful. No user with id, " + args["user_id"] + ", exists on the server"
-    return user_json.delete_acc_response_json(bool(result.deleted_count), msg)
+        msg = "Request unsuccessful. No user with id, " + kwargs["user_id"] + ", exists on the server"
+    return user_json.success_response_json(bool(result.deleted_count), msg)
 
 
 @app.route("/deactivate_acc/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def deactivate_account(args):
+@use_kwargs(UserIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for deactivating an existing account", tags=['Account'])
+def deactivate_account(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.update_one({"_id": ObjectId(args["user_id"])},
+    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
                                  {"$set": {"acc_active": False}}, )
 
     print("deactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + args["user_id"] + ", does not exist on the server"
+        msg = "The account with id, " + kwargs["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + args["user_id"] + ", has been deactivated on the server"
+        msg = "User with id, " + kwargs["user_id"] + ", has been deactivated on the server"
         session["acc_active"] = False
 
     else:
-        msg = "The account for user with id, " + args["user_id"] + ", is already deactivated"
+        msg = "The account for user with id, " + kwargs["user_id"] + ", is already deactivated"
 
-    return user_json.account_status_response_json(bool(result.modified_count), msg)
+    return user_json.success_response_json(bool(result.modified_count), msg)
 
 
 @app.route("/reactivate_acc/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def reactivate_account(args):
+@use_kwargs(UserIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for reactivating an existing account in a deactivated state", tags=['Account'])
+def reactivate_account(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    result = db.users.update_one({"_id": ObjectId(args["user_id"])},
+    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
                                  {"$set": {"acc_active": True}}, )
     print("reactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + args["user_id"] + ", does not exist on the server"
+        msg = "The account with id, " + kwargs["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + args["user_id"] + ", has been reactivated on the server"
+        msg = "User with id, " + kwargs["user_id"] + ", has been reactivated on the server"
         session["acc_active"] = True
 
     else:
-        msg = "The account for user with id, " + args["user_id"] + ", is already active"
+        msg = "The account for user with id, " + kwargs["user_id"] + ", is already active"
 
-    return user_json.account_status_response_json(bool(result.modified_count), msg)
+    return user_json.success_response_json(bool(result.modified_count), msg)
 
 
 @app.route("/sso_login/")
+@marshal_with(SSOLoginResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for creating a new account for or logging a user in through Dartmouth SSO", tags=['Account'])
 def sso_login():
     next = request.args.get('next')
     service_ticket = request.args.get("ticket")
@@ -256,6 +263,8 @@ def sso_login():
 
 
 @app.route("/sso_logout/")
+@marshal_with(None, code=200, description="Response json")
+@doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
 def sso_logout():
     logout_url = cas_client.get_logout_url()
     print("logout_url", logout_url)
@@ -266,21 +275,23 @@ def sso_logout():
 
 
 @app.route("/login/", methods=['POST'])
-@use_args(LoginSchema(), unknown=None)
-def login(args):
+@use_kwargs(LoginSchema())
+@marshal_with(LoginResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for logging a user into an existing non-SSO account", tags=['Account'])
+def login(**kwargs):
     succeeded = False
     user_id = None
     user_info = None
 
     try:
-        valid_email = validate_email(args["user_info"]["email"])
+        valid_email = validate_email(kwargs["user_info"]["email"])
         user = db.users.find_one({"user_info": {"email": valid_email.email}})
         print("email_check", user)
         if not user:
             msg = "The Dartmouth email provided does not exist on the server"
 
         else:
-            user = db.users.find_one({"user_info": {"email": valid_email.email}, "password": args["password"]})
+            user = db.users.find_one({"user_info": {"email": valid_email.email}, "password": kwargs["password"]})
             print("password_check", user)
             if not user:
                 msg = "The provided Dartmouth email exists but the password doesn't match what's on the server"
@@ -305,13 +316,15 @@ def login(args):
 
 
 @app.route("/logout/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def logout(args):
-    if session.pop("user_id", default=None) == args["user_id"]:
+@use_kwargs(UserIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for logging a user out of a non-SSO account", tags=['Account'])
+def logout(**kwargs):
+    if session.pop("user_id", default=None) == kwargs["user_id"]:
         succeeded = True
-        msg = "The user with id, " + args["user_id"] + ", has been logged out"
+        msg = "The user with id, " + kwargs["user_id"] + ", has been logged out"
     else:
-        succeeded = True
+        succeeded = False
         msg = "The request was unsuccessful. The user isn't logged in"
 
     return user_json.success_response_json(succeeded, msg)
@@ -333,8 +346,10 @@ def global_count():
 
 
 @app.route("/order_del/", methods=['POST'])
-@use_args(OrderDelSchema(), unknown=None)
-def order_delivery(args):
+@use_kwargs(OrderDelSchema())
+@marshal_with(OrderDelResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for ordering a delivery", tags=["Orders"])
+def order_delivery(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -344,13 +359,13 @@ def order_delivery(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    customer = db.users.find_one({"_id": ObjectId(args["user_id"])}, {"user_info": 1, "_id": 0})
-    customer["user_id"] = args["user_id"]
+    customer = db.users.find_one({"_id": ObjectId(kwargs["user_id"])}, {"user_info": 1, "_id": 0})
+    customer["user_id"] = kwargs["user_id"]
 
     order_id = db.orders.insert_one(
         user_json.order_delivery_json(customer,
-                                      args["order"]["pickup_loc"], args["order"]["drop_loc"],
-                                      args["order"]["GET_code"])).inserted_id
+                                      kwargs["order"]["pickup_loc"], kwargs["order"]["drop_loc"],
+                                      kwargs["order"]["GET_code"])).inserted_id
 
     if order_id:
         msg = "The order request has been created successfully"
@@ -362,8 +377,10 @@ def order_delivery(args):
 
 
 @app.route("/update_order/", methods=['POST'])
-@use_args(UpdateOrderSchema(), unknown=None)
-def update_order(args):
+@use_kwargs(UpdateOrderSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for updating an existing order", tags=['Orders'])
+def update_order(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -374,9 +391,9 @@ def update_order(args):
         return user_json.request_denied_json_response(msg)
 
     succeeded = 0
-    order_id = args["order"]["order_id"]
+    order_id = kwargs["order"]["order_id"]
     msg = "The order with id, " + order_id + ", doesn't exist"
-    for key, value in args["order"].items():
+    for key, value in kwargs["order"].items():
         if key != "order_id":
             print("key: ", key, " value: ", value)
             result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
@@ -392,8 +409,10 @@ def update_order(args):
 
 
 @app.route("/make_del/", methods=['POST'])
-@use_args(MakeDelSchema(), unknown=None)
-def make_delivery(args):
+@use_kwargs(MakeDelSchema())
+@marshal_with(StartDelResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for requesting to make a delivery", tags=['Orders'])
+def make_delivery(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -403,13 +422,13 @@ def make_delivery(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    delivery = args["delivery"]
-    result = db.users.update_one({"_id": ObjectId(args["user_id"])},
+    delivery = kwargs["delivery"]
+    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
                                  {"$set": user_json.make_delivery_json(
                                      delivery["leaving_from"], delivery["destination"])}, )
     print("modified: ", result.modified_count, " number of users")
 
-    customer_finder = CustomerFinder(args["user_id"], delivery["destination"],
+    customer_finder = CustomerFinder(kwargs["user_id"], delivery["destination"],
                                      db.orders.find(user_json.find_order_json()))
 
     customer_finder.sort_customers()
@@ -419,8 +438,10 @@ def make_delivery(args):
 
 
 @app.route("/my_deliverer/", methods=['POST'])
-@use_args(OrderIdSchema(), unknown=None)
-def get_my_deliverer(args):
+@use_kwargs(OrderIdSchema())
+@marshal_with(GetDelivererResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting the current deliverer for an existing order", tags=['Orders'])
+def get_my_deliverer(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -430,7 +451,7 @@ def get_my_deliverer(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    deliverer_info = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"deliverer.deliverer_info": 1, "_id": 0})
+    deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"deliverer.deliverer_info": 1, "_id": 0})
 
     if deliverer_info:
         succeeded = True
@@ -444,8 +465,10 @@ def get_my_deliverer(args):
 
 
 @app.route("/order_status/", methods=['POST'])
-@use_args(UserIdOrderIdSchema(), unknown=None)
-def get_order_status(args):
+@use_kwargs(UserIdOrderIdSchema())
+@marshal_with(GetOrderStatusResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting the order status of an existing order", tags=['Orders'])
+def get_order_status(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -455,7 +478,7 @@ def get_order_status(args):
         msg = "Request denied. You've deactivated your account. You have to reactivate it before making this request"
         return user_json.request_denied_json_response(msg)
 
-    order_status = db.orders.find_one({"_id": ObjectId(args["order_id"])}, {"order_status": 1, "_id": 0})
+    order_status = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"order_status": 1, "_id": 0})
 
     if order_status:
         succeeded = True
@@ -469,8 +492,10 @@ def get_order_status(args):
 
 
 @app.route("/match/", methods=['POST'])
-@use_args(MatchOrderSchema(), unknown=None)
-def match(args):
+@use_kwargs(MatchOrderSchema())
+@marshal_with(MatchResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for matching a deliverer with an existing order", tags=['Orders'])
+def match(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -481,23 +506,23 @@ def match(args):
         return user_json.request_denied_json_response(msg)
 
     # Check if the order exists
-    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
-        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return user_json.match_response_json(False, msg, None)
 
     # Prevent self-matching
-    if order["customer"]["user_id"] == args["user"]["user_id"]:
+    if order["customer"]["user_id"] == kwargs["user"]["user_id"]:
         msg = "You created this order. You can't self-match"
         return user_json.match_response_json(False, msg, None)
 
     # Ensure the order hasn't been cancelled
     if order["order_status"] == "cancelled":
-        msg = "The order with id, " + args["order_id"] + ", has been cancelled by the customer"
+        msg = "The order with id, " + kwargs["order_id"] + ", has been cancelled by the customer"
         return user_json.match_response_json(False, msg, None)
 
-    result = db.orders.update_one(user_json.match_order_filter_json(ObjectId(args["order_id"])),
-                                  {"$set": user_json.match_unmatch_customer_json(args["user"])}, )
+    result = db.orders.update_one(user_json.match_order_filter_json(ObjectId(kwargs["order_id"])),
+                                  {"$set": user_json.match_unmatch_customer_json(kwargs["user"])}, )
 
     if result.modified_count:
         msg = "Request completed. You've been matched with the order"
@@ -510,8 +535,10 @@ def match(args):
 
 
 @app.route("/unmatch/", methods=['POST'])
-@use_args(UserIdOrderIdSchema(), unknown=None)
-def unmatch(args):
+@use_kwargs(UserIdOrderIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for un-matching a deliverer from an existing order", tags=['Orders'])
+def unmatch(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -522,19 +549,19 @@ def unmatch(args):
         return user_json.request_denied_json_response(msg)
 
     # Check if the order exists
-    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
-        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return user_json.success_response_json(False, msg)
 
-    # if order["customer"]["user_id"] == args["user_id"] and (args["order_status"] != "matched" or )
+    # if order["customer"]["user_id"] == kwargs["user_id"] and (kwargs["order_status"] != "matched" or )
 
     result = db.orders.update_one(
-        user_json.unmatch_order_filter_json(ObjectId(args["order_id"]), args["user_id"]),
+        user_json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), kwargs["user_id"]),
         {"$set": user_json.match_unmatch_customer_json(order_status="pending")}, )
 
     if result.modified_count:
-        msg = "Request completed. Order with id, " + args["order_id"] + " is back to pending status"
+        msg = "Request completed. Order with id, " + kwargs["order_id"] + " is back to pending status"
 
     else:
         msg = "The request was unsuccessful. The order did not have a deliverer to unmatch"
@@ -543,8 +570,10 @@ def unmatch(args):
 
 
 @app.route("/cancel_order/", methods=['POST'])
-@use_args(UserIdOrderIdSchema(), unknown=None)
-def cancel_order(args):
+@use_kwargs(UserIdOrderIdSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for canceling an existing order. Accessible to only the order creator", tags=['Orders'])
+def cancel_order(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
@@ -555,20 +584,20 @@ def cancel_order(args):
         return user_json.request_denied_json_response(msg)
 
     # Check if the order exists
-    order = db.orders.find_one({"_id": (ObjectId(args["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
-        msg = "The order with id, " + args["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return user_json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        user_json.cancel_order_filter_json(ObjectId(args["order_id"]), args["user_id"]),
+        user_json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), kwargs["user_id"]),
         {"$set": user_json.match_unmatch_customer_json(order_status="cancelled")}, )
 
     if not result.matched_count:  # Ensure the user has permission to cancel the order
         msg = "You don't have permission to cancel this order"
 
     elif result.modified_count:  # Check for order cancellation
-        msg = "Request completed. Order with id, " + args["order_id"] + " cancelled"
+        msg = "Request completed. Order with id, " + kwargs["order_id"] + " cancelled"
 
     else:
         msg = "The request was unsuccessful. The order has already been cancelled"
@@ -577,25 +606,29 @@ def cancel_order(args):
 
 
 @app.route("/orders/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def show_orders(args):
+@use_kwargs(UserIdSchema())
+@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting all existing orders", tags=['Orders'])
+def show_orders(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    cursor = db.orders.find(user_json.show_orders_input_json(args["user_id"]))
+    cursor = db.orders.find(user_json.show_orders_input_json(kwargs["user_id"]))
 
     return json_util.dumps(user_json.show_orders_response_json(cursor))
 
 
 @app.route("/deliveries/", methods=['POST'])
-@use_args(UserIdSchema(), unknown=None)
-def show_deliveries(args):
+@use_kwargs(UserIdSchema())
+@marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting all existing deliveries", tags=['Orders'])
+def show_deliveries(**kwargs):
     if not session.get("user_id"):
         msg = "Request denied. This device is not logged into the server yet"
         return user_json.request_denied_json_response(msg)
 
-    cursor = db.orders.find(user_json.show_deliveries_input_json(args["user_id"]))
+    cursor = db.orders.find(user_json.show_deliveries_input_json(kwargs["user_id"]))
 
     return json_util.dumps(user_json.show_deliveries_response_json(cursor))
 
@@ -612,6 +645,25 @@ def handle_error(err):
         return user_json.validation_errors_json(messages), err.code
 
 
+# account
 docs.register(create_account)
-docs.register(show_users)
+docs.register(update_account)
+docs.register(delete_account)
+docs.register(deactivate_account)
+docs.register(reactivate_account)
+docs.register(sso_login)
+docs.register(sso_logout)
+docs.register(login)
+docs.register(logout)
+
+# orders
+docs.register(order_delivery)
+docs.register(update_order)
+docs.register(make_delivery)
+docs.register(get_my_deliverer)
+docs.register(get_order_status)
+docs.register(match)
+docs.register(unmatch)
+docs.register(cancel_order)
 docs.register(show_orders)
+docs.register(show_deliveries)

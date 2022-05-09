@@ -201,8 +201,25 @@ class UnmatchOrderSchema(Schema):
 
 
 # Response schemas
+class UserInfoResponseSchema(Schema):
+    email = fields.Str(required=True)
+    name = fields.Str(required=True)
+    phone_num = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class UserResponseSchema(Schema):
+    user_id = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class CreateAccResponseSchema(Schema):
-    succeeded = fields.Str(required=True)
+    succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
     user = fields.Nested(UserIdSchema(), required=True)
 
@@ -210,4 +227,92 @@ class CreateAccResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class LoginResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    user = fields.Nested(UserResponseSchema(), required=True)
 
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class SSOLoginResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    is_new_login = fields.Int(required=True)
+    authentication_date = fields.Str(required=True)
+    user = fields.Nested(UserResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class OrderDelResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    order = fields.Nested(OrderIdSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class StartDelResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    unmatched_users = fields.List(fields.Field, required=True)  # temporarily use Field for List eles; add details later
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GetDelivererResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    deliverer_info = fields.Nested(UserResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GetOrderStatusResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    order_status = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class MatchResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    matched_customer = fields.Nested(UserResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GetOrdersResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    orders = fields.List(fields.Field, required=True)  # temporarily use Field for List eles; add details later
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GetDeliveriesResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    deliveries = fields.List(fields.Field, required=True)  # temporarily use Field for List eles; add details later
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class SuccessResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE

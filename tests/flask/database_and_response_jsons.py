@@ -147,20 +147,6 @@ def create_acc_response_json(succeeded, msg, user_id=None):
     }
 
 
-def delete_acc_response_json(succeeded, msg):
-    return {
-        "succeeded": succeeded,
-        "msg": msg,
-    }
-
-
-def account_status_response_json(succeeded, msg):
-    return {
-        "succeeded": succeeded,
-        "msg": msg,
-    }
-
-
 def request_denied_json_response(msg):
     return {
         "succeeded": False,
