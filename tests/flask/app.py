@@ -121,7 +121,7 @@ def update_account(**kwargs):
             except ValueError as err:
                 return json.success_response_json(False, str(err))
 
-        result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
+        result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                      {"$set": {key: value}})
         succeeded = max(succeeded, result.modified_count)
 
@@ -138,13 +138,13 @@ def update_account(**kwargs):
 def delete_account(**kwargs):
     login_check()
 
-    result = db.users.delete_one({"_id": ObjectId(kwargs["user_id"])})
+    result = db.users.delete_one({"_id": ObjectId(session["user_id"])})
     if result.deleted_count:
-        msg = "User with id, " + kwargs["user_id"] + ", has been deleted from the server"
+        msg = "User with id, " + session["user_id"] + ", has been deleted from the server"
         session.pop("user_id", default=None)
 
     else:
-        msg = "Request unsuccessful. No user with id, " + kwargs["user_id"] + ", exists on the server"
+        msg = "Request unsuccessful. No user with id, " + session["user_id"] + ", exists on the server"
     return json.success_response_json(bool(result.deleted_count), msg)
 
 
@@ -155,19 +155,19 @@ def delete_account(**kwargs):
 def deactivate_account(**kwargs):
     login_check()
 
-    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
+    result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": {"acc_active": False}}, )
 
     print("deactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + kwargs["user_id"] + ", does not exist on the server"
+        msg = "The account with id, " + session["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + kwargs["user_id"] + ", has been deactivated on the server"
+        msg = "User with id, " + session["user_id"] + ", has been deactivated on the server"
         session["acc_active"] = False
 
     else:
-        msg = "The account for user with id, " + kwargs["user_id"] + ", is already deactivated"
+        msg = "The account for user with id, " + session["user_id"] + ", is already deactivated"
 
     return json.success_response_json(bool(result.modified_count), msg)
 
@@ -179,18 +179,18 @@ def deactivate_account(**kwargs):
 def reactivate_account(**kwargs):
     login_check()
 
-    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
+    result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": {"acc_active": True}}, )
     print("reactivate_acc result:", result.raw_result)
     if not result.matched_count:
-        msg = "The account with id, " + kwargs["user_id"] + ", does not exist on the server"
+        msg = "The account with id, " + session["user_id"] + ", does not exist on the server"
 
     elif result.modified_count:
-        msg = "User with id, " + kwargs["user_id"] + ", has been reactivated on the server"
+        msg = "User with id, " + session["user_id"] + ", has been reactivated on the server"
         session["acc_active"] = True
 
     else:
-        msg = "The account for user with id, " + kwargs["user_id"] + ", is already active"
+        msg = "The account for user with id, " + session["user_id"] + ", is already active"
 
     return json.success_response_json(bool(result.modified_count), msg)
 
@@ -324,12 +324,12 @@ def login(**kwargs):
 def logout(**kwargs):
     login_check()
 
-    if session.pop("user_id", default=None) == kwargs["user_id"]:
+    if session.pop("user_id", default=None):
         succeeded = True
-        msg = "The user with id, " + kwargs["user_id"] + ", has been logged out"
+        msg = "The user with id, " + session["user_id"] + ", has been logged out"
     else:
         succeeded = False
-        msg = "The request was unsuccessful. The user isn't logged in"
+        msg = "The request was unsuccessful"
 
     return json.success_response_json(succeeded, msg)
 
@@ -357,8 +357,8 @@ def order_delivery(**kwargs):
     login_check()
     acc_status_check()
 
-    customer = db.users.find_one({"_id": ObjectId(kwargs["user_id"])}, {"user_info": 1, "_id": 0})
-    customer["user_id"] = kwargs["user_id"]
+    customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+    customer["user_id"] = session["user_id"]
 
     order_id = db.orders.insert_one(
         json.order_delivery_json(customer,
@@ -409,12 +409,12 @@ def make_delivery(**kwargs):
     acc_status_check()
 
     delivery = kwargs["delivery"]
-    result = db.users.update_one({"_id": ObjectId(kwargs["user_id"])},
+    result = db.users.update_one({"_id": ObjectId(session["user_id"])},
                                  {"$set": json.make_delivery_json(
                                      delivery["leaving_from"], delivery["destination"])}, )
     print("modified: ", result.modified_count, " number of users")
 
-    customer_finder = CustomerFinder(kwargs["user_id"], delivery["destination"],
+    customer_finder = CustomerFinder(session["user_id"], delivery["destination"],
                                      db.orders.find(json.find_order_json()))
 
     customer_finder.sort_customers()
@@ -516,10 +516,10 @@ def unmatch(**kwargs):
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return json.success_response_json(False, msg)
 
-    # if order["customer"]["user_id"] == kwargs["user_id"] and (kwargs["order_status"] != "matched" or )
+    # if order["customer"]["user_id"] == session["user_id and (kwargs["order_status"] != "matched" or )
 
     result = db.orders.update_one(
-        json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), kwargs["user_id"]),
+        json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="pending")}, )
 
     if result.modified_count:
@@ -546,7 +546,7 @@ def cancel_order(**kwargs):
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), kwargs["user_id"]),
+        json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="cancelled")}, )
 
     if not result.matched_count:  # Ensure the user has permission to cancel the order
@@ -568,7 +568,7 @@ def cancel_order(**kwargs):
 def show_orders(**kwargs):
     login_check()
 
-    cursor = db.orders.find(json.show_orders_input_json(kwargs["user_id"]))
+    cursor = db.orders.find(json.show_orders_input_json(session["user_id"]))
 
     return json_util.dumps(json.show_orders_response_json(cursor))
 
@@ -580,7 +580,7 @@ def show_orders(**kwargs):
 def show_deliveries(**kwargs):
     login_check()
 
-    cursor = db.orders.find(json.show_deliveries_input_json(kwargs["user_id"]))
+    cursor = db.orders.find(json.show_deliveries_input_json(session["user_id"]))
 
     return json_util.dumps(json.show_deliveries_response_json(cursor))
 
