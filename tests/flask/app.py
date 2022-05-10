@@ -13,7 +13,7 @@ from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
-from tests.flask.utils.common_functions import login_check, acc_status_check
+from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -110,7 +110,7 @@ def create_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating an existing account", tags=['Account'])
 def update_account(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -147,7 +147,7 @@ def update_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deleting an existing account", tags=['Account'])
 def delete_account(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -166,7 +166,7 @@ def delete_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deactivating an existing account", tags=['Account'])
 def deactivate_account(**kwargs):
-    login_failed = login_failed = login_check()
+    login_failed = login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
     if login_failed:
@@ -194,7 +194,7 @@ def deactivate_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for reactivating an existing account in a deactivated state", tags=['Account'])
 def reactivate_account(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -283,7 +283,7 @@ def sso_login():
 @marshal_with(None, code=200, description="Response json")
 @doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
 def sso_logout():
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -339,7 +339,7 @@ def login(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for logging a user out of a non-SSO account", tags=['Account'])
 def logout(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -374,10 +374,10 @@ def global_count():
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for ordering a delivery", tags=["Orders"])
 def order_delivery(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -403,10 +403,10 @@ def order_delivery(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating an existing order", tags=['Orders'])
 def update_order(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -433,10 +433,10 @@ def update_order(**kwargs):
 @marshal_with(StartDelResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for requesting to make a delivery", tags=['Orders'])
 def make_delivery(delivery, **kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -459,10 +459,10 @@ def make_delivery(delivery, **kwargs):
 @marshal_with(GetDelivererResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting the current deliverer for an existing order", tags=['Orders'])
 def get_my_deliverer(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -487,10 +487,10 @@ def get_my_deliverer(**kwargs):
 @marshal_with(GetOrderStatusResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting the order status of an existing order", tags=['Orders'])
 def get_order_status(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -512,11 +512,11 @@ def get_order_status(**kwargs):
 @marshal_with(MatchResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for matching a deliverer with an existing order", tags=['Orders'])
 def match(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
-    status_check_failed = status_check_failed = acc_status_check()
+    status_check_failed = status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
     if status_check_failed:
@@ -549,7 +549,7 @@ def match(**kwargs):
         msg = "You've already matched with the customer on this order"
 
     else:
-        msg = "Request not completed. The customer on the order has already been matched with someone else"
+        msg = "Request not completed. The customer on the order has already been matched with different deliverer"
         customer = None
 
     # Returns the current user info of the customer in case they updated their info before the match
@@ -561,10 +561,11 @@ def match(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for un-matching a deliverer from an existing order", tags=['Orders'])
 def unmatch(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -574,24 +575,29 @@ def unmatch(**kwargs):
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
         return json.success_response_json(False, msg)
 
-    # if order["customer"]["user_id"] == session["user_id and (kwargs["order_status"] != "matched" or )
+    # Ensure the order is not canceled
+    if order["order_status"] == "canceled":
+        msg = "The request was unsuccessful. The order was canceled"
+        return json.success_response_json(False, msg)
 
-    # Ensure the deliverer can be unmatched from the order
-    # Customers can unmatch a deliverer from an order only if the order is not canceled and not past pending
-    if order["customer"]["user_id"] == session["user_id"] and order["order_status"] != "pending":
-        if order["order_status"] == "canceled":
-            msg = "The request was unsuccessful. The order was canceled"
+    # Ensure the order has a deliverer
+    if not order["deliverer"]:
+        msg = "The request was unsuccessful. The order did not have a deliverer to unmatch from"
+        return json.success_response_json(False, msg)
 
-        else:
-            msg = "You can't unmatch the deliverer, they're on their way"
-
+    # Customers can unmatch a deliverer from an order only if the order is not canceled and not past matched
+    if order["customer"]["user_id"] == session["user_id"] and order["order_status"] != "matched":
+        msg = "You can't unmatch the deliverer form this order; they're already on their way"
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
         json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="pending")}, )
 
-    if result.modified_count:
+    if not result.matched_count:
+        msg = "You can't unmatch the deliverer from this order. You're not the creator or the deliverer for the order"
+
+    elif result.modified_count:
         msg = "Request completed. Order with id, " + kwargs["order_id"] + " is back to pending status"
 
     else:
@@ -605,10 +611,10 @@ def unmatch(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for canceling an existing order. Accessible to only the order creator", tags=['Orders'])
 def cancel_order(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
-    status_check_failed = acc_status_check()
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -652,7 +658,7 @@ def cancel_order(**kwargs):
 @marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing orders", tags=['Orders'])
 def show_orders(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -666,7 +672,7 @@ def show_orders(**kwargs):
 @marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing deliveries", tags=['Orders'])
 def show_deliveries(**kwargs):
-    login_failed = login_check()
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 

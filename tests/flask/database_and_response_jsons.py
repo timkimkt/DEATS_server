@@ -56,13 +56,13 @@ def unmatch_order_filter_json(order_id, user_id):
         "$or": [
             {  # A deliverer should be able to unmatch from a delivery only when the order hasn't been cancelled
                 "$and": [
-                    {"deliverer.id": user_id},  # A deliverer should have permission to be able to unmatch
-                    {"order_status": {"$ne": "cancelled"}}
+                    {"deliverer.user_id": user_id},  # A deliverer should have permission to be able to unmatch
+                    {"order_status": {"$ne": "canceled"}}
                 ]
             },
             {  # A customer should only be able to unmatch a deliverer when the order is still in a matched state
                 "$and": [
-                    {"customer.id": user_id},  # A customer should have permission to be able to unmatch
+                    {"customer.user_id": user_id},  # A customer should have permission to be able to unmatch
                     {"order_status": "matched"}
                 ]
             }
