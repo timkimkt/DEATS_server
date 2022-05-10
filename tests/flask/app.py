@@ -498,17 +498,19 @@ def get_order_status(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    order_status = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"order_status": 1, "_id": 0})
+    # Ensure the order exists
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    if not order:
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        return json.success_response_json(False, msg)
 
-    if order_status:
-        succeeded = True
-        msg = "Request successful"
+    # Ensure the user created the order
+    if order["customer"]["user_id"] != session["user_id"]:
+        msg = "Request denied. You're not the creator of this order"
+        return json.success_response_json(False, msg)
 
-    else:
-        succeeded = True
-        msg = "Request unsuccessful. Try again later"
-
-    return json.make_get_order_status_response(succeeded, msg, order_status)
+    msg = "Request successful"
+    return json.make_get_order_status_response(True, msg, order["order_status"])
 
 
 @app.route("/match/", methods=['POST'])
