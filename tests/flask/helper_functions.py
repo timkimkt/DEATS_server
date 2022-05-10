@@ -29,7 +29,7 @@ switcher = {
     password_strength.tests.Numbers: "should have at least 1 number",
     password_strength.tests.Special: "should have at least 1 special character",
     password_strength.tests.NonLetters: "should have at least 2 non-letters",
-    password_strength.tests.Strength: "isn't strong enough",
+    password_strength.tests.Strength: "is not strong enough"
 }
 
 
