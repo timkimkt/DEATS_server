@@ -115,8 +115,9 @@ def update_account(**kwargs):
         return login_failed
 
     succeeded = 0
-    for key, value in kwargs.items():
-        if key == "password" and not kwargs["test"]:
+
+    if kwargs.get("password"):
+        if not kwargs["test"]:
             try:
                 validate_password(kwargs["password"])
 
@@ -124,12 +125,20 @@ def update_account(**kwargs):
                 return json.success_response_json(False, str(err))
 
         result = db.users.update_one({"_id": ObjectId(session["user_id"])},
-                                     {"$set": {key: value}})
+                                     {"$set": {"password": kwargs["password"]}})
+
         succeeded = max(succeeded, result.modified_count)
+
+    if kwargs.get("user_info"):
+        for key, value in kwargs["user_info"].items():
+            result = db.users.update_one({"_id": ObjectId(session["user_id"])},
+                                         {"$set": {f"user_info.{key}": value}})
+
+            succeeded = max(succeeded, result.modified_count)
 
     # bulk update message; might do individual messaging in the future
     msg = "The user's account has been updated" if succeeded else "The request was not completed. Nothing new was" \
-                                                                  "passed"
+                                                                  " passed"
     return json.success_response_json(bool(succeeded), msg)
 
 
@@ -457,7 +466,8 @@ def get_my_deliverer(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])}, {"deliverer.deliverer_info": 1, "_id": 0})
+    deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])},
+                                        {"deliverer.deliverer_info": 1, "_id": 0})
 
     print("deliverer_info:", deliverer_info)
 
