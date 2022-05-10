@@ -48,7 +48,8 @@ class UpdateAccUserSchema(Schema):
 
 
 class UpdateAccSchema(Schema):
-    user = fields.Nested(UpdateAccUserSchema(), required=True)
+    user_info = fields.Nested(UpdateAccUserInfoSchema(), load_only=True)
+    password = fields.Str(load_only=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
