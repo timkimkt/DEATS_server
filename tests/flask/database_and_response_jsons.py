@@ -89,14 +89,18 @@ def show_deliveries_input_json(user_id):
     }
 
 
-def show_orders_response_json(orders):
+def show_orders_response_json(succeeded, msg, orders):
     return {
+        "succeeded": succeeded,
+        "msg": msg,
         "orders": orders
     }
 
 
-def show_deliveries_response_json(deliveries):
+def show_deliveries_response_json(succeeded, msg, deliveries):
     return {
+        "succeeded": succeeded,
+        "msg": msg,
         "deliveries": deliveries
     }
 

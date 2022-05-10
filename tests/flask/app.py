@@ -668,9 +668,10 @@ def show_orders(**kwargs):
     if login_failed:
         return login_failed
 
-    cursor = db.orders.find(json.show_orders_input_json(session["user_id"]))
+    orders = db.orders.find(json.show_orders_input_json(session["user_id"]))
 
-    return json_util.dumps(json.show_orders_response_json(cursor))
+    msg = "Here's a list of orders you've made" if orders else "You've not made any orders yet"
+    return json_util.dumps(json.show_orders_response_json(True, msg, orders))
 
 
 @app.route("/deliveries/", methods=['POST'])
@@ -682,9 +683,10 @@ def show_deliveries(**kwargs):
     if login_failed:
         return login_failed
 
-    cursor = db.orders.find(json.show_deliveries_input_json(session["user_id"]))
+    orders = db.orders.find(json.show_deliveries_input_json(session["user_id"]))
 
-    return json_util.dumps(json.show_deliveries_response_json(cursor))
+    msg = "Here's a list of deliveries you've made" if orders else "You've not made any deliveries yet"
+    return json_util.dumps(json.show_deliveries_response_json(True, msg, orders))
 
 
 # Return data validation errors as a JSON object
