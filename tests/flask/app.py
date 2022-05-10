@@ -463,23 +463,26 @@ def get_my_deliverer(**kwargs):
     if login_failed:
         return login_failed
     status_check_failed = acc_is_active()
+
     if status_check_failed:
         return status_check_failed
 
-    deliverer_info = db.orders.find_one({"_id": ObjectId(kwargs["order_id"])},
-                                        {"deliverer.deliverer_info": 1, "_id": 0})
+    # Ensure the order exists
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    if not order:
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        return json.success_response_json(False, msg)
 
+    # Ensure the user created the order
+    if order["customer"]["user_id"] != session["user_id"]:
+        msg = "Request denied. You're not the creator of this order"
+        return json.success_response_json(False, msg)
+
+    deliverer_info = order["deliverer"].get("user_info")
     print("deliverer_info:", deliverer_info)
 
-    if deliverer_info is not None:
-        succeeded = True
-        msg = "Deliverer found!" if len(deliverer_info) else "No deliverer for this order yet. Check again later"
-
-    else:
-        succeeded = False
-        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
-
-    return json.get_my_deliverer_response(succeeded, msg, deliverer_info)
+    msg = "Deliverer found!" if deliverer_info else "No deliverer for this order yet. Check again later"
+    return json.get_my_deliverer_response(True, msg, deliverer_info)
 
 
 @app.route("/order_status/", methods=['POST'])
@@ -490,6 +493,7 @@ def get_order_status(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -522,7 +526,7 @@ def match(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    # Check if the order exists
+    # Ensure the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
@@ -569,7 +573,7 @@ def unmatch(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    # Check if the order exists
+    # Ensure the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
@@ -618,7 +622,7 @@ def cancel_order(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    # Check if the order exists
+    # Ensure the order exists
     order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
     if not order:
         msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
