@@ -50,6 +50,7 @@ class UpdateAccUserSchema(Schema):
 class UpdateAccSchema(Schema):
     user_info = fields.Nested(UpdateAccUserInfoSchema(), load_only=True)
     password = fields.Str(load_only=True)
+    test = fields.Bool(missing=False)
 
     class Meta:
         unknown = UNKNOWN_VALUE

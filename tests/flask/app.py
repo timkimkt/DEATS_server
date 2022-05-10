@@ -116,7 +116,7 @@ def update_account(**kwargs):
 
     succeeded = 0
     for key, value in kwargs.items():
-        if key == "password":
+        if key == "password" and not kwargs["test"]:
             try:
                 validate_password(kwargs["password"])
 
