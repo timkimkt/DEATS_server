@@ -61,7 +61,16 @@ git commit -am "<commit message>"
 **Optional**: You don't need to do this, but to quickly understand how Flask works and how it's been used in this project you may follow Flask's quickstart guidelines [here](https://flask.palletsprojects.com/en/2.1.x/quickstart/).
 
 
-## API Reference
+## API Reference DEATS version
+- A comprehensive list of the exposed endpoints for *`DEATS server 1.0.0`* is provided in this README (See below).
+- For the most up-to-date comprehensive list of exposed endpoints for the revamped version, *`DEATS server 2.0.0`*, visit the following links.
+  - mainline (prod, used by DEATS frontend): [deats-server.herokuapp.com/DEATS-server-api-ui/](https://deats-server.herokuapp.com/DEATS-server-api-ui/)
+  - testline (dev, used by DEATS server developers): [d-testline.herokuapp.com/DEATS-server-api-ui/](https://d-testline.herokuapp.com/DEATS-server-api-ui/) 
+- In `DEATS server 2.0.0`, we're making the lives of clients easier by hosting all the exposed endpoints on the server through Swagger to allow clients to get the most up-to-date API references for both mainline and testline. 
+- The hosted API references are interactive. This means that users can easily learn how to make requests to the server, as well as see in realtime
+  all responses returned by the server.
+- After satisfying the requirements for hitting a particular endpoint and getting the results wanted, users can just copy-paste the json object into their source code or follow the same pattern to implement it in their code.
+
 
 ### GET Methods
 ###### /sso_login
@@ -298,7 +307,7 @@ git commit -am "<commit message>"
 
 ###### /orders
 >- Description: Endpoint for viewing all orders made by a user.
->- Input: Accepts the following JSON object.
+>- Input: Accepts the following JSON object. 
         {
             "id": <id>
         }
@@ -308,17 +317,6 @@ git commit -am "<commit message>"
             "orders": orders"
         }
 
-###### /deliveries
->- Description: Endpoint for viewing all deliveries made by a user.
->- Input: Accepts the following JSON object.
-        {
-            "id": <id>
-        }
-    
->- Output: Returns the following JSON object.
-        {
-            "deliveries": deliveries
-        }
 ###### /deliveries
 >- Description: Endpoint for viewing all deliveries made by a user.
 >- Input: Accepts the following JSON object.
