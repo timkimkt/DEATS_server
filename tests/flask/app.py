@@ -9,6 +9,7 @@ import tests.flask.database_and_response_jsons as json
 from bson.objectid import ObjectId
 from datetime import timedelta
 from flask import Flask, request, session, url_for
+from flask_socketio import SocketIO, join_room, send
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -44,6 +45,8 @@ app.config.update({
     'APISPEC_SWAGGER_URL': '/DEATS-server-api-json/',
     'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
 })
+
+socketio = SocketIO(app)
 
 docs = FlaskApiSpec(app)
 
@@ -395,7 +398,12 @@ def order_delivery(**kwargs):
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
 
-    return json.order_delivery_response_json(bool(order_id), msg, str(order_id))
+    order_id = str(order_id)
+
+    # create a new room for the customer with using the order_id
+    join_room(order_id)
+
+    return json.order_delivery_response_json(bool(order_id), msg, order_id)
 
 
 @app.route("/update_order/", methods=['POST'])
@@ -550,6 +558,12 @@ def match(**kwargs):
     customer = order["customer"]
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
+
+        # if the deliverer succeeds in getting on the order, add them to the room for the order
+        join_room(kwargs["order_id"])
+
+        # notify the customer that they've matched with a deliverer
+        socketio.send("Matched", to=kwargs["order_id"])
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
