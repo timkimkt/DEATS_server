@@ -27,7 +27,7 @@ SESSION_REDIS = redis.from_url("redis://:p202d128f66a40a4c6898c7dd732e48b222138f
                                "107-21-59-180.compute-1.amazonaws.com:24529")
 
 app.config.from_object(__name__)
-Session(app)
+# Session(app)
 
 cas_client = CASClient(
     version=3,
