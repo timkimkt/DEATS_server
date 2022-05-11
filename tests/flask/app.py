@@ -486,11 +486,12 @@ def get_my_deliverer(**kwargs):
         msg = "Request denied. You're not the creator of this order"
         return json.success_response_json(False, msg)
 
-    deliverer_info = order["deliverer"].get("user_info")
-    print("deliverer_info:", deliverer_info)
+    deliverer = order["deliverer"]
 
-    msg = "Deliverer found!" if deliverer_info else "No deliverer for this order yet. Check again later"
-    return json.get_my_deliverer_response(True, msg, deliverer_info)
+    print("deliverer_info:", deliverer)
+
+    msg = "Deliverer found!" if deliverer else "No deliverer for this order yet. Check again later"
+    return json.get_my_deliverer_response(True, msg, deliverer)
 
 
 @app.route("/order_status/", methods=['POST'])

@@ -216,13 +216,11 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
-def get_my_deliverer_response(succeeded, msg, deliverer_info):
+def get_my_deliverer_response(succeeded, msg, deliverer):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "deliverer": {
-            "deliverer_info": deliverer_info
-        }
+        "deliverer": deliverer
     }
 
 
