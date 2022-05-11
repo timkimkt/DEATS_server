@@ -79,13 +79,13 @@ def cancel_order_filter_json(order_id, customer_id):
 
 def show_orders_input_json(user_id):
     return {
-        "customer_id": user_id,
+        "customer.user_id": user_id,
     }
 
 
 def show_deliveries_input_json(user_id):
     return {
-        "deliverer_id": user_id,
+        "deliverer.user_id": user_id,
     }
 
 
