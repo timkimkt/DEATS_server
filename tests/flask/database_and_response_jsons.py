@@ -39,7 +39,10 @@ def make_delivery_json(leaving_from, destination):
 
 def find_order_json():
     return {
-        "deliverer": None
+        "$and": [
+            {"deliverer": None},  # the order should have no deliverer
+            {"order_status": {"$ne": "canceled"}}  # and it should not have a canceled status
+        ]
     }
 
 
