@@ -39,7 +39,10 @@ def make_delivery_json(leaving_from, destination):
 
 def find_order_json():
     return {
-        "deliverer": None
+        "$and": [
+            {"deliverer": None},  # the order should have no deliverer
+            {"order_status": {"$ne": "canceled"}}  # and it should not have a canceled status
+        ]
     }
 
 
@@ -56,13 +59,13 @@ def unmatch_order_filter_json(order_id, user_id):
         "$or": [
             {  # A deliverer should be able to unmatch from a delivery only when the order hasn't been cancelled
                 "$and": [
-                    {"deliverer.id": user_id},  # A deliverer should have permission to be able to unmatch
-                    {"order_status": {"$ne": "cancelled"}}
+                    {"deliverer.user_id": user_id},  # A deliverer should have permission to be able to unmatch
+                    {"order_status": {"$ne": "canceled"}}
                 ]
             },
             {  # A customer should only be able to unmatch a deliverer when the order is still in a matched state
                 "$and": [
-                    {"customer.id": user_id},  # A customer should have permission to be able to unmatch
+                    {"customer.user_id": user_id},  # A customer should have permission to be able to unmatch
                     {"order_status": "matched"}
                 ]
             }
@@ -79,29 +82,38 @@ def cancel_order_filter_json(order_id, customer_id):
 
 def show_orders_input_json(user_id):
     return {
-        "customer_id": user_id,
+        "customer.user_id": user_id,
     }
 
 
 def show_deliveries_input_json(user_id):
     return {
-        "deliverer_id": user_id,
+        "deliverer.user_id": user_id,
     }
 
 
-def show_orders_response_json(orders):
+def show_orders_response_json(succeeded, msg, orders):
     return {
+        "succeeded": succeeded,
+        "msg": msg,
         "orders": orders
     }
 
 
-def show_deliveries_response_json(deliveries):
+def show_deliveries_response_json(succeeded, msg, deliveries):
     return {
+        "succeeded": succeeded,
+        "msg": msg,
         "deliveries": deliveries
     }
 
 
-def match_unmatch_customer_json(deliverer=None, order_status="matched"):
+def match_unmatch_customer_json(user_id=None, user_info=None, order_status="matched"):
+    deliverer = {
+        "user_id": user_id,
+        "user_info": user_info
+    } if user_id else None
+
     return {
         "deliverer": deliverer,
         "order_status": order_status
@@ -109,18 +121,22 @@ def match_unmatch_customer_json(deliverer=None, order_status="matched"):
 
 
 # ------------- JSON responses ------------- #
-def login_response_json(succeeded, msg, user_id, user_info):
+def login_response_json(succeeded, msg, user_id, user_info, acc_active):
+    user = {
+        "user_id": user_id,
+        "acc_active": acc_active,
+        "user_info": user_info
+    } if user_id else None
+
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "user": {
-            "user_id": user_id,
-            "user_info": user_info
-        }
+        "user": user
     }
 
 
-def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_num, is_new_login, authentication_date):
+def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
+                            net_id_email, phone_num, is_new_login, authentication_date):
     return {
         "succeeded": succeeded,
         "msg": msg,
@@ -128,6 +144,7 @@ def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_n
         "authentication_date": authentication_date,
         "user": {
             "user_id": user_id,
+            "acc_active": acc_active,
             "user_info": {
                 "email": net_id_email,
                 "name": name,
@@ -137,27 +154,16 @@ def sso_login_response_json(succeeded, msg, user_id, name, net_id_email, phone_n
     }
 
 
-def create_acc_response_json(succeeded, msg, user_id=None):
+def create_acc_response_json(succeeded, msg, user_id=None, acc_active=None):
+    user = {
+        "user_id": user_id,
+        "acc_active": acc_active
+    } if user_id else None
+
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "user": {
-            "user_id": user_id,
-        }
-    }
-
-
-def delete_acc_response_json(succeeded, msg):
-    return {
-        "succeeded": succeeded,
-        "msg": msg,
-    }
-
-
-def account_status_response_json(succeeded, msg):
-    return {
-        "succeeded": succeeded,
-        "msg": msg,
+        "user": user
     }
 
 
@@ -210,7 +216,7 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
-def make_get_my_deliverer_response(succeeded, msg, deliverer_info):
+def get_my_deliverer_response(succeeded, msg, deliverer_info):
     return {
         "succeeded": succeeded,
         "msg": msg,
