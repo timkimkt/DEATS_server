@@ -264,7 +264,8 @@ class StartDelResponseSchema(Schema):
 class GetDelivererResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    deliverer_info = fields.Nested(UserResponseSchemaWithActiveStatus(), required=True)
+    # can use UserResponseSchema; acc_active won't matter since it's not passed to the response json
+    deliverer = fields.Nested(UserResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
