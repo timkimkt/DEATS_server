@@ -77,7 +77,7 @@ def create_account(**kwargs):
         print("user:", user)
         if user:
             msg = "The Dartmouth email provided is taken. Log in instead if it's your account or use a " \
-                  "different email address"
+                  "different valid Dartmouth email address"
             return json.create_acc_response_json(False, msg)
 
         elif kwargs["password"]:
@@ -541,7 +541,7 @@ def match(**kwargs):
 
     # Ensure the order hasn't been canceled
     if order["order_status"] == "canceled":
-        msg = "The order with id, " + kwargs["order_id"] + ", has been canceled by the customer"
+        msg = "You can't match with this order. It has been canceled by the customer"
         return json.match_response_json(False, msg, None)
 
     result = db.orders.update_one(json.match_order_filter_json(ObjectId(kwargs["order_id"])),
@@ -549,13 +549,13 @@ def match(**kwargs):
 
     customer = order["customer"]
     if result.modified_count:
-        msg = "Request completed. You've been matched with the customer on the order"
+        msg = "Request completed. You've matched with the customer on the order"
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
 
     else:
-        msg = "Request not completed. The customer on the order has already been matched with different deliverer"
+        msg = "Request not completed. The customer on the order has already been matched with a different deliverer"
         customer = None
 
     # Returns the current user info of the customer in case they updated their info before the match
@@ -632,7 +632,7 @@ def cancel_order(**kwargs):
 
     # Ensure the user has permission to cancel the order
     if order["customer"]["user_id"] != session["user_id"]:
-        msg = "You don't have permission to cancel this order"
+        msg = "You did not create this order. You don't have permission to cancel it"
         return json.success_response_json(False, msg)
 
     # Ensure the order is cancelable.
