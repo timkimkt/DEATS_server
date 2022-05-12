@@ -531,9 +531,7 @@ def match(**kwargs):
     if login_failed:
         return login_failed
 
-    status_check_failed = status_check_failed = acc_is_active()
-    if status_check_failed:
-        return status_check_failed
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -553,8 +551,18 @@ def match(**kwargs):
         msg = "You can't match with this order. It has been canceled by the customer"
         return json.match_response_json(False, msg, None)
 
+    # Get the user info from the db
+    deliverer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+
+    # If the user passed in new user info to be used at the time of making the delivery request, use those instead
+    if kwargs.get("user_info"):
+        for key, value in kwargs["user_info"]:
+            deliverer["user_info"][f"{key}"] = value
+
+    deliverer["user_id"] = session["user_id"]
+
     result = db.orders.update_one(json.match_order_filter_json(ObjectId(kwargs["order_id"])),
-                                  {"$set": json.match_unmatch_customer_json(session["user_id"], kwargs["user_info"])}, )
+                                  {"$set": json.match_unmatch_customer_json(deliverer)}, )
 
     customer = order["customer"]
     if result.modified_count:

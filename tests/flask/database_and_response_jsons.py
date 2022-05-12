@@ -108,12 +108,7 @@ def show_deliveries_response_json(succeeded, msg, deliveries):
     }
 
 
-def match_unmatch_customer_json(user_id=None, user_info=None, order_status="matched"):
-    deliverer = {
-        "user_id": user_id,
-        "user_info": user_info
-    } if user_id else None
-
+def match_unmatch_customer_json(deliverer=None, order_status="matched"):
     return {
         "deliverer": deliverer,
         "order_status": order_status

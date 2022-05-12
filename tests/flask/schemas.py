@@ -155,16 +155,16 @@ class UserIdOrderIdSchema(Schema):
 
 
 class UserInfoSchema(Schema):
-    email = fields.Str(required=True)
-    name = fields.Str(required=True)
-    phone_num = fields.Str(required=True)
+    email = fields.Str(load_only=True)
+    name = fields.Str(load_only=True)
+    phone_num = fields.Str(load_only=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
 
 
 class MatchOrderSchema(Schema):
-    user_info = fields.Nested(UserInfoSchema(), required=True)
+    user_info = fields.Nested(UserInfoSchema(), load_only=True)
     order_id = fields.Str(required=True)
 
     class Meta:
