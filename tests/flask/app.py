@@ -384,7 +384,14 @@ def order_delivery(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    # Get the customer info from the db
     customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+
+    # If the customer passed in new user info to be used at the time of creating the order, use that instead
+    if kwargs.get("user_info"):
+        for key, value in kwargs["user_info"].items():
+            customer["user_info"][f"{key}"] = value
+
     customer["user_id"] = session["user_id"]
 
     order_id = db.orders.insert_one(
@@ -551,12 +558,12 @@ def match(**kwargs):
         msg = "You can't match with this order. It has been canceled by the customer"
         return json.match_response_json(False, msg, None)
 
-    # Get the user info from the db
+    # Get the deliverer info from the db
     deliverer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
 
-    # If the user passed in new user info to be used at the time of making the delivery request, use those instead
+    # If the deliverer passed in new user info to be used at the time of making the delivery request, use that instead
     if kwargs.get("user_info"):
-        for key, value in kwargs["user_info"]:
+        for key, value in kwargs["user_info"].items():
             deliverer["user_info"][f"{key}"] = value
 
     deliverer["user_id"] = session["user_id"]

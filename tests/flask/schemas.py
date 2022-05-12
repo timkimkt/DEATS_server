@@ -22,6 +22,15 @@ class CreateAccUserInfoSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class UserInfoSchema(Schema):
+    email = fields.Str(load_only=True)
+    name = fields.Str(load_only=True)
+    phone_num = fields.Str(load_only=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class CreateAccSchema(Schema):
     user_info = fields.Nested(CreateAccUserInfoSchema(), required=True)
     password = fields.Str(required=True)
@@ -98,6 +107,7 @@ class OrderDelInfoSchema(Schema):
 
 class OrderDelSchema(Schema):
     user_id = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoSchema(), load_only=True)
     order = fields.Nested(OrderDelInfoSchema(), required=True)
 
     class Meta:
@@ -149,15 +159,6 @@ class OrderIdSchema(Schema):
 class UserIdOrderIdSchema(Schema):
     user_id = fields.Str(required=True)
     order_id = fields.Str(required=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
-class UserInfoSchema(Schema):
-    email = fields.Str(load_only=True)
-    name = fields.Str(load_only=True)
-    phone_num = fields.Str(load_only=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
