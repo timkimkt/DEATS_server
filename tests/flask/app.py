@@ -555,6 +555,29 @@ def get_order_status(**kwargs):
     return json.make_get_order_status_response(True, msg, order["order_status"])
 
 
+@app.route("/get_code/", methods=['POST'])
+@use_kwargs(UserIdOrderIdSchema())
+@marshal_with(GETCodeResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting the GET code of an existing order", tags=['Orders'])
+def retrieve_get_code(**kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    # Ensure the order exists
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    if not order:
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        return json.success_response_json(False, msg)
+
+    msg = "Request successful"
+    return json.make_get_order_status_response(True, msg, order["GET_code"])
+
+
 @app.route("/match/", methods=['POST'])
 @use_kwargs(MatchOrderSchema())
 @marshal_with(MatchResponseSchema, code=200, description="Response json")
@@ -775,6 +798,7 @@ docs.register(update_order)
 docs.register(make_delivery)
 docs.register(get_my_deliverer)
 docs.register(get_order_status)
+docs.register(retrieve_get_code)
 docs.register(match)
 docs.register(unmatch)
 docs.register(cancel_order)

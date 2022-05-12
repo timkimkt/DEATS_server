@@ -290,6 +290,22 @@ class GetOrderStatusResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class GETCodeSchema(Schema):
+    GET_code = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GETCodeResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    order = fields.Nested(GETCodeSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class MatchResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
