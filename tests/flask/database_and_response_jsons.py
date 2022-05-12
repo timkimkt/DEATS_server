@@ -162,7 +162,9 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
 def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_active=None):
     user = {
         "user_id": user_id,
-        "username": username,
+        "user_info": {
+            "username": username
+        },
         "acc_active": acc_active
     } if user_id else None
 
