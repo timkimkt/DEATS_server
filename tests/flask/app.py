@@ -92,9 +92,10 @@ def create_account(**kwargs):
             kwargs["user_info"]["email"] = valid_email.email
 
             # generate a random username for the user that's not already in the db
-            username = generate_username
+            username = generate_username()[0]
+            print(username)
             while db.users.find_one({"user_info.username": username}):
-                username = generate_username
+                username = generate_username()[0]
 
             kwargs["user_info"]["username"] = username
 
@@ -275,9 +276,10 @@ def sso_login():
             name = attributes.get("name")
 
             # generate a random username for the user that's not already in the db
-            username = generate_username
+            username = generate_username()[0]
+            print(username)
             while db.users.find_one({"user_info.username": username}):
-                username = generate_username
+                username = generate_username()[0]
 
             user_info = json.create_user_info_json(net_id_email, username, name)
 
