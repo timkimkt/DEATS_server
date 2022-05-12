@@ -131,7 +131,7 @@ def update_account(**kwargs):
     username = kwargs.get("user_info").get("username")
     if username:
         user = db.users.find_one({"user_info.username": username})
-        if user and user["user_id"] != session["user_id"]:
+        if user and str(user["_id"]) != session["user_id"]:
             msg = "The request was aborted. You provided a username that already exists on the server"
             return json.success_response_json(False, msg)
 
