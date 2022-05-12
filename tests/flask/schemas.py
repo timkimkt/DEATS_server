@@ -13,7 +13,7 @@ class UserIdSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class CreateAccUserInfoSchema(Schema):
+class CreateAccUserInfoInputSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(load_only=True)
     phone_num = fields.Str(load_only=True)
@@ -22,7 +22,7 @@ class CreateAccUserInfoSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UserInfoSchema(Schema):
+class UserInfoInputSchema(Schema):
     email = fields.Str(load_only=True)
     name = fields.Str(load_only=True)
     phone_num = fields.Str(load_only=True)
@@ -32,7 +32,7 @@ class UserInfoSchema(Schema):
 
 
 class CreateAccSchema(Schema):
-    user_info = fields.Nested(CreateAccUserInfoSchema(), required=True)
+    user_info = fields.Nested(CreateAccUserInfoInputSchema(), required=True)
     password = fields.Str(required=True)
     test = fields.Bool(missing=False)
 
@@ -107,7 +107,7 @@ class OrderDelInfoSchema(Schema):
 
 class OrderDelSchema(Schema):
     user_id = fields.Str(required=True)
-    user_info = fields.Nested(UserInfoSchema(), load_only=True)
+    user_info = fields.Nested(UserInfoInputSchema(), load_only=True)
     order = fields.Nested(OrderDelInfoSchema(), required=True)
 
     class Meta:
@@ -165,7 +165,7 @@ class UserIdOrderIdSchema(Schema):
 
 
 class MatchOrderSchema(Schema):
-    user_info = fields.Nested(UserInfoSchema(), load_only=True)
+    user_info = fields.Nested(UserInfoInputSchema(), load_only=True)
     order_id = fields.Str(required=True)
 
     class Meta:
@@ -183,6 +183,7 @@ class UnmatchOrderSchema(Schema):
 class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(required=True)
+    username = fields.Str(required=True)
     phone_num = fields.Str(required=True)
 
     class Meta:
@@ -209,7 +210,7 @@ class UserResponseSchemaWithActiveStatus(Schema):
 
 class UserInfoResponse(Schema):
     user_id = fields.Str(required=True)
-    username = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoResponseSchema(), required=True)
     acc_active = fields.Bool(required=True)
 
     class Meta:

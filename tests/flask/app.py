@@ -185,9 +185,7 @@ def delete_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deactivating an existing account", tags=['Account'])
 def deactivate_account(**kwargs):
-    login_failed = login_failed = user_is_logged_in()
-    if login_failed:
-        return login_failed
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -447,6 +445,7 @@ def update_order(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -477,6 +476,7 @@ def make_delivery(delivery, **kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
