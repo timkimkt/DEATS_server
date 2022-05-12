@@ -42,6 +42,7 @@ class CreateAccSchema(Schema):
 
 class UpdateAccUserInfoSchema(Schema):
     name = fields.Str(load_only=True)
+    username = fields.Str(load_only=True)
     phone_num = fields.Str(load_only=True)
 
     class Meta:
