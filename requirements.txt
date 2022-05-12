@@ -9,3 +9,4 @@ password_strength
 flask-apispec==0.11.0
 flask-socketio
 eventlet
+random-username

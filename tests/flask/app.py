@@ -5,6 +5,7 @@ from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
 import tests.flask.database_and_response_jsons as json
+from random_username.generate import generate_username
 
 from bson.objectid import ObjectId
 from datetime import timedelta
@@ -89,6 +90,14 @@ def create_account(**kwargs):
                 validate_password(kwargs["password"])
 
             kwargs["user_info"]["email"] = valid_email.email
+
+            # generate a random username for the user that's not already in the db
+            username = generate_username
+            while db.users.find_one({"user_info.username": username}):
+                username = generate_username
+
+            kwargs["user_info"]["username"] = username
+
             result = db.users.insert_one(
                 json.create_user_json(kwargs["user_info"], kwargs["password"]))
             msg = "User deets are now on the server"
@@ -102,7 +111,7 @@ def create_account(**kwargs):
             # save account active status for easy access later on
             session["acc_active"] = acc_active
 
-            return json.create_acc_response_json(True, msg, user_id, acc_active)
+            return json.create_acc_response_json(True, msg, user_id, username, acc_active)
 
     except ValueError as err:
         return json.create_acc_response_json(False, str(err))
@@ -251,6 +260,7 @@ def sso_login():
             user_id = str(result_find["_id"])
             acc_active = result_find["acc_active"]
             name = result_find["user_info"]["name"]
+            username = result_find["user_info"]["username"]
             phone_num = result_find["user_info"]["phone_num"]
 
             # save account active status for easy access later on
@@ -258,7 +268,15 @@ def sso_login():
 
         else:
             name = attributes.get("name")
-            result_insert = db.users.insert_one(json.create_user_json(net_id_email, name))
+
+            # generate a random username for the user that's not already in the db
+            username = generate_username
+            while db.users.find_one({"user_info.username": username}):
+                username = generate_username
+
+            user_info = json.create_user_info_json(net_id_email, username, name)
+
+            result_insert = db.users.insert_one(json.create_user_json(user_info))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
             acc_active = True
@@ -275,6 +293,7 @@ def sso_login():
                                             user_id,
                                             acc_active,
                                             name,
+                                            username,
                                             net_id_email,
                                             phone_num,
                                             attributes.get("isFromNewLogin"),

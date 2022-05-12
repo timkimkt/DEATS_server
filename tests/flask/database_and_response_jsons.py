@@ -3,12 +3,21 @@ import time
 from datetime import datetime
 
 
-def create_user_json(user_info, password):
+def create_user_json(user_info, password=None):
     return {
         "acc_active": True,
         "password": password,
         "user_info": user_info,
         "delivery_info": None
+    }
+
+
+def create_user_info_json(email, username, name=None, phone_num=None):
+    return {
+        "email": email,
+        "name": name,
+        "username": username,
+        "phone_num": phone_num
     }
 
 
@@ -130,7 +139,7 @@ def login_response_json(succeeded, msg, user_id, user_info, acc_active):
     }
 
 
-def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
+def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                             net_id_email, phone_num, is_new_login, authentication_date):
     return {
         "succeeded": succeeded,
@@ -143,15 +152,17 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
             "user_info": {
                 "email": net_id_email,
                 "name": name,
+                "username": username,
                 "phone_num": phone_num
             }
         }
     }
 
 
-def create_acc_response_json(succeeded, msg, user_id=None, acc_active=None):
+def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_active=None):
     user = {
         "user_id": user_id,
+        "username": username,
         "acc_active": acc_active
     } if user_id else None
 

@@ -207,8 +207,9 @@ class UserResponseSchemaWithActiveStatus(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UserIdAccStatusSchema(Schema):
+class UserInfoResponse(Schema):
     user_id = fields.Str(required=True)
+    username = fields.Str(required=True)
     acc_active = fields.Bool(required=True)
 
     class Meta:
@@ -218,7 +219,7 @@ class UserIdAccStatusSchema(Schema):
 class CreateAccResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    user = fields.Nested(UserIdAccStatusSchema(), required=True)
+    user = fields.Nested(UserInfoResponse(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
