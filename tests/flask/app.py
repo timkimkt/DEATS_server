@@ -47,7 +47,7 @@ app.config.update({
     'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
 })
 
-socketio = SocketIO(app)
+socketio = SocketIO(app, logger=True, engineio_logger=True)
 
 docs = FlaskApiSpec(app)
 
@@ -433,9 +433,6 @@ def order_delivery(**kwargs):
 
     order_id = str(order_id)
 
-    # create a new room for the customer with using the order_id
-    join_room(order_id)
-
     return json.order_delivery_response_json(bool(order_id), msg, order_id)
 
 
@@ -626,9 +623,6 @@ def match(**kwargs):
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
 
-        # if the deliverer succeeds in getting on the order, add them to the room for the order
-        join_room(kwargs["order_id"])
-
         # notify the customer that they've matched with a deliverer
         socketio.send("Matched", to=kwargs["order_id"])
 
@@ -769,6 +763,19 @@ def show_deliveries(**kwargs):
     msg = "Here's a list of deliveries you've made" if len(list(orders.clone()))\
         else "You've not made any deliveries yet"
     return json.show_deliveries_response_json(True, msg, orders)
+
+
+@socketio.on("join")
+def on_join(data):
+    print("on join data: ", data)
+    print("session: ", session)
+
+    user_id = session["user_id"]
+    order_id = data["order_id"]
+
+    # add the user to a room based on the order_id passed
+    join_room(order_id)
+    send("The user " + user_id + " has been added to the order " + order_id, to=order_id)
 
 
 # Return data validation errors as a JSON object
