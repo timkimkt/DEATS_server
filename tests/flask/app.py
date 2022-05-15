@@ -777,6 +777,9 @@ def on_join(data):
     # add the user to a room based on the order_id passed
     join_room(order_id)
     send("The user " + user_id + " has been added to the order " + order_id, to=order_id)
+    
+    msg = "The user has been successfully added to the room " + order_id
+    return json.success_response_json(True, msg)
 
 
 # Return data validation errors as a JSON object
