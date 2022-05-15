@@ -47,7 +47,7 @@ app.config.update({
     'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
 })
 
-socketio = SocketIO(app, logger=True, engineio_logger=True)
+socketio = SocketIO(app, manage_session=True, logger=True, engineio_logger=True)
 
 docs = FlaskApiSpec(app)
 
@@ -770,7 +770,8 @@ def on_join(data):
     print("on join data: ", data)
     print("session: ", session)
 
-    user_id = session["user_id"]
+    # user_id = session["user_id"]
+    user_id = data["user_id"]
     order_id = data["order_id"]
 
     # add the user to a room based on the order_id passed
