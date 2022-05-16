@@ -710,10 +710,12 @@ def cancel_order(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    order_id = kwargs["order_id"]
+
     # Ensure the order exists
-    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if not order:
-        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + order_id + ", doesn't exist"
         return json.success_response_json(False, msg)
 
     # Ensure the user has permission to cancel the order
@@ -733,11 +735,12 @@ def cancel_order(**kwargs):
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
+        json.cancel_order_filter_json(ObjectId(order_id), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="canceled")}, )
 
     if result.modified_count:  # Check for order cancellation
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " has been canceled"
+        socketio.emit("order:cancel", {"reason": kwargs["reason"]}, to=order_id)
+        msg = "Request completed. Order with id, " + order_id + " has been canceled"
 
     else:
         msg = "Request unsuccessful"
