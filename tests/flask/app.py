@@ -10,7 +10,7 @@ from random_username.generate import generate_username
 from bson.objectid import ObjectId
 from datetime import timedelta
 from flask import Flask, request, session, url_for
-from flask_socketio import SocketIO, join_room, send
+from flask_socketio import SocketIO, join_room, send, emit
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -765,6 +765,16 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
+@socketio.on('connect')
+def on_connect():
+    print("New connection")
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    print("Client disconnected")
+
+
 @socketio.on("join")
 def on_join(data):
     print("on join data: ", data)
@@ -776,7 +786,13 @@ def on_join(data):
 
     # add the user to a room based on the order_id passed
     join_room(order_id)
-    send("The user " + user_id + " has been added to the order " + order_id, to=order_id)
+
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
+    if order["deliverer"]["user_id"] == user_id:
+        emit("order:deliverer", order["deliverer"], to=order_id)
+
+    else:
+        send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
     
     msg = "The user has been successfully added to the room " + order_id
     return json.success_response_json(True, msg)
