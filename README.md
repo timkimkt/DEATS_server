@@ -62,12 +62,12 @@ git commit -am "<commit message>"
 
 
 ## API Reference DEATS version
-- A comprehensive list of the exposed endpoints for **`DEATS server 1.0.0`** is provided in this README (See below).
+- A comprehensive list of the exposed endpoints for **`DEATS server 1.0.0`** is provided in this README below.
 - For the most up-to-date comprehensive list of exposed endpoints for the revamped version, **`DEATS server 2.0.0`**, visit the following links.
   - mainline (prod, used by DEATS frontend): [deats-server.herokuapp.com/DEATS-server-api-ui/](https://deats-server.herokuapp.com/DEATS-server-api-ui/)
   - testline (dev, used by DEATS server developers): [d-testline.herokuapp.com/DEATS-server-api-ui/](https://d-testline.herokuapp.com/DEATS-server-api-ui/) 
 - In **`DEATS server 2.0.0`**, we're making the lives of clients easier by hosting all the exposed endpoints on the server through Swagger to allow clients to get the most up-to-date API references for both mainline and testline. 
-- The hosted API references are interactive. This means that users can easily learn how to make requests to the server, as well as see in realtime
+- The hosted API references are interactive. This means that users can play with the server and easily learn how to make requests to it, as well as see in realtime
   all responses returned by the server.
 - After playing with an endpoint and getting the results wanted, users can just copy-paste the json object into their source code or follow the same pattern to implement it in their code.
 - **Note:** Options for each endpoint are for preflight requests.
