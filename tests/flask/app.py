@@ -471,7 +471,7 @@ def update_order(**kwargs):
 
     else:
         "The request wasn't successful. No new info was provided"
-        
+
     return json.success_response_json(bool(succeeded), msg)
 
 
@@ -658,10 +658,12 @@ def unmatch(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    order_id = kwargs["order_id"]
+
     # Ensure the order exists
-    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if not order:
-        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + order_id + ", doesn't exist"
         return json.success_response_json(False, msg)
 
     # Ensure the order is not canceled
@@ -680,14 +682,15 @@ def unmatch(**kwargs):
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
+        json.unmatch_order_filter_json(ObjectId(order_id), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="pending")}, )
 
     if not result.matched_count:
         msg = "You can't unmatch the deliverer from this order. You're not the creator or the deliverer for the order"
 
     elif result.modified_count:
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " is back to pending status"
+        socketio.emit("order:unmatch", {"reason": kwargs["reason"]}, to=order_id)
+        msg = "Request completed. Order with id, " + order_id + " is back to pending status"
 
     else:
         msg = "The request was unsuccessful. The order did not have a deliverer to unmatch from"
