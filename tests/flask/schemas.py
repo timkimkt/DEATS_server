@@ -13,7 +13,7 @@ class UserIdSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class CreateAccUserInfoSchema(Schema):
+class CreateAccUserInfoInputSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(load_only=True)
     phone_num = fields.Str(load_only=True)
@@ -22,8 +22,17 @@ class CreateAccUserInfoSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class UserInfoInputSchema(Schema):
+    email = fields.Str(load_only=True)
+    name = fields.Str(load_only=True)
+    phone_num = fields.Str(load_only=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class CreateAccSchema(Schema):
-    user_info = fields.Nested(CreateAccUserInfoSchema(), required=True)
+    user_info = fields.Nested(CreateAccUserInfoInputSchema(), required=True)
     password = fields.Str(required=True)
     test = fields.Bool(missing=False)
 
@@ -33,6 +42,7 @@ class CreateAccSchema(Schema):
 
 class UpdateAccUserInfoSchema(Schema):
     name = fields.Str(load_only=True)
+    username = fields.Str(load_only=True)
     phone_num = fields.Str(load_only=True)
 
     class Meta:
@@ -98,6 +108,7 @@ class OrderDelInfoSchema(Schema):
 
 class OrderDelSchema(Schema):
     user_id = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoInputSchema(), load_only=True)
     order = fields.Nested(OrderDelInfoSchema(), required=True)
 
     class Meta:
@@ -154,17 +165,8 @@ class UserIdOrderIdSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UserInfoSchema(Schema):
-    email = fields.Str(required=True)
-    name = fields.Str(required=True)
-    phone_num = fields.Str(required=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
 class MatchOrderSchema(Schema):
-    user_info = fields.Nested(UserInfoSchema(), required=True)
+    user_info = fields.Nested(UserInfoInputSchema(), load_only=True)
     order_id = fields.Str(required=True)
 
     class Meta:
@@ -182,6 +184,7 @@ class UnmatchOrderSchema(Schema):
 class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(required=True)
+    username = fields.Str(required=True)
     phone_num = fields.Str(required=True)
 
     class Meta:
@@ -206,8 +209,9 @@ class UserResponseSchemaWithActiveStatus(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class UserIdAccStatusSchema(Schema):
+class UserInfoResponse(Schema):
     user_id = fields.Str(required=True)
+    user_info = fields.Nested(UserInfoResponseSchema(), required=True)
     acc_active = fields.Bool(required=True)
 
     class Meta:
@@ -217,7 +221,7 @@ class UserIdAccStatusSchema(Schema):
 class CreateAccResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    user = fields.Nested(UserIdAccStatusSchema(), required=True)
+    user = fields.Nested(UserInfoResponse(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -264,7 +268,8 @@ class StartDelResponseSchema(Schema):
 class GetDelivererResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    deliverer_info = fields.Nested(UserResponseSchemaWithActiveStatus(), required=True)
+    # can use UserResponseSchema; acc_active won't matter since it's not passed to the response json
+    deliverer = fields.Nested(UserResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -281,6 +286,22 @@ class GetOrderStatusResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
     order = fields.Nested(OrderStatusSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GETCodeSchema(Schema):
+    GET_code = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class GETCodeResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    order = fields.Nested(GETCodeSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE

@@ -5,10 +5,12 @@ from bson import json_util
 from cas import CASClient
 from werkzeug.utils import redirect
 import tests.flask.database_and_response_jsons as json
+from random_username.generate import generate_username
 
 from bson.objectid import ObjectId
 from datetime import timedelta
 from flask import Flask, request, session, url_for
+from flask_socketio import SocketIO, join_room, send, emit
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
@@ -44,6 +46,8 @@ app.config.update({
     'APISPEC_SWAGGER_URL': '/DEATS-server-api-json/',
     'APISPEC_SWAGGER_UI_URL': '/DEATS-server-api-ui/'
 })
+
+socketio = SocketIO(app, manage_session=True, logger=True, engineio_logger=True)
 
 docs = FlaskApiSpec(app)
 
@@ -86,6 +90,15 @@ def create_account(**kwargs):
                 validate_password(kwargs["password"])
 
             kwargs["user_info"]["email"] = valid_email.email
+
+            # generate a random username for the user that's not already in the db
+            username = generate_username()[0]
+            print(username)
+            while db.users.find_one({"user_info.username": username}):
+                username = generate_username()[0]
+
+            kwargs["user_info"]["username"] = username
+
             result = db.users.insert_one(
                 json.create_user_json(kwargs["user_info"], kwargs["password"]))
             msg = "User deets are now on the server"
@@ -99,7 +112,7 @@ def create_account(**kwargs):
             # save account active status for easy access later on
             session["acc_active"] = acc_active
 
-            return json.create_acc_response_json(True, msg, user_id, acc_active)
+            return json.create_acc_response_json(True, msg, user_id, username, acc_active)
 
     except ValueError as err:
         return json.create_acc_response_json(False, str(err))
@@ -114,8 +127,15 @@ def update_account(**kwargs):
     if login_failed:
         return login_failed
 
-    succeeded = 0
+    # Ensure that if the user provided a new username, it is not already taken
+    username = kwargs.get("user_info").get("username")
+    if username:
+        user = db.users.find_one({"user_info.username": username})
+        if user and str(user["_id"]) != session["user_id"]:
+            msg = "The request was aborted. You provided a username that already exists on the server"
+            return json.success_response_json(False, msg)
 
+    succeeded = 0
     if kwargs.get("password"):
         if not kwargs["test"]:
             try:
@@ -166,9 +186,7 @@ def delete_account(**kwargs):
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for deactivating an existing account", tags=['Account'])
 def deactivate_account(**kwargs):
-    login_failed = login_failed = user_is_logged_in()
-    if login_failed:
-        return login_failed
+    login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
 
@@ -248,6 +266,7 @@ def sso_login():
             user_id = str(result_find["_id"])
             acc_active = result_find["acc_active"]
             name = result_find["user_info"]["name"]
+            username = result_find["user_info"]["username"]
             phone_num = result_find["user_info"]["phone_num"]
 
             # save account active status for easy access later on
@@ -255,7 +274,16 @@ def sso_login():
 
         else:
             name = attributes.get("name")
-            result_insert = db.users.insert_one(json.create_user_json(net_id_email, name))
+
+            # generate a random username for the user that's not already in the db
+            username = generate_username()[0]
+            print(username)
+            while db.users.find_one({"user_info.username": username}):
+                username = generate_username()[0]
+
+            user_info = json.create_user_info_json(net_id_email, username, name)
+
+            result_insert = db.users.insert_one(json.create_user_json(user_info))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
             acc_active = True
@@ -272,6 +300,7 @@ def sso_login():
                                             user_id,
                                             acc_active,
                                             name,
+                                            username,
                                             net_id_email,
                                             phone_num,
                                             attributes.get("isFromNewLogin"),
@@ -381,7 +410,14 @@ def order_delivery(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    # Get the customer info from the db
     customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+
+    # If the customer passed in new user info to be used at the time of creating the order, use that instead
+    if kwargs.get("user_info"):
+        for key, value in kwargs["user_info"].items():
+            customer["user_info"][f"{key}"] = value
+
     customer["user_id"] = session["user_id"]
 
     order_id = db.orders.insert_one(
@@ -395,7 +431,9 @@ def order_delivery(**kwargs):
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
 
-    return json.order_delivery_response_json(bool(order_id), msg, str(order_id))
+    order_id = str(order_id)
+
+    return json.order_delivery_response_json(bool(order_id), msg, order_id)
 
 
 @app.route("/update_order/", methods=['POST'])
@@ -406,6 +444,7 @@ def update_order(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -436,6 +475,7 @@ def make_delivery(delivery, **kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -478,11 +518,12 @@ def get_my_deliverer(**kwargs):
         msg = "Request denied. You're not the creator of this order"
         return json.success_response_json(False, msg)
 
-    deliverer_info = order["deliverer"].get("user_info")
-    print("deliverer_info:", deliverer_info)
+    deliverer = order["deliverer"]
 
-    msg = "Deliverer found!" if deliverer_info else "No deliverer for this order yet. Check again later"
-    return json.get_my_deliverer_response(True, msg, deliverer_info)
+    print("deliverer_info:", deliverer)
+
+    msg = "Deliverer found!" if deliverer else "No deliverer for this order yet. Check again later"
+    return json.get_my_deliverer_response(True, msg, deliverer)
 
 
 @app.route("/order_status/", methods=['POST'])
@@ -513,6 +554,29 @@ def get_order_status(**kwargs):
     return json.make_get_order_status_response(True, msg, order["order_status"])
 
 
+@app.route("/get_code/", methods=['POST'])
+@use_kwargs(UserIdOrderIdSchema())
+@marshal_with(GETCodeResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting the GET code of an existing order", tags=['Orders'])
+def retrieve_get_code(**kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    # Ensure the order exists
+    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    if not order:
+        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        return json.success_response_json(False, msg)
+
+    msg = "Request successful"
+    return json.make_get_order_status_response(True, msg, order["GET_code"])
+
+
 @app.route("/match/", methods=['POST'])
 @use_kwargs(MatchOrderSchema())
 @marshal_with(MatchResponseSchema, code=200, description="Response json")
@@ -522,9 +586,7 @@ def match(**kwargs):
     if login_failed:
         return login_failed
 
-    status_check_failed = status_check_failed = acc_is_active()
-    if status_check_failed:
-        return status_check_failed
+    status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
 
@@ -544,12 +606,25 @@ def match(**kwargs):
         msg = "You can't match with this order. It has been canceled by the customer"
         return json.match_response_json(False, msg, None)
 
+    # Get the deliverer info from the db
+    deliverer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+
+    # If the deliverer passed in new user info to be used at the time of making the delivery request, use that instead
+    if kwargs.get("user_info"):
+        for key, value in kwargs["user_info"].items():
+            deliverer["user_info"][f"{key}"] = value
+
+    deliverer["user_id"] = session["user_id"]
+
     result = db.orders.update_one(json.match_order_filter_json(ObjectId(kwargs["order_id"])),
-                                  {"$set": json.match_unmatch_customer_json(session["user_id"], kwargs["user_info"])}, )
+                                  {"$set": json.match_unmatch_customer_json(deliverer)}, )
 
     customer = order["customer"]
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
+
+        # notify the customer that they've matched with a deliverer
+        socketio.send("Matched", to=kwargs["order_id"])
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
@@ -690,6 +765,39 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
+@socketio.on('connect')
+def on_connect():
+    print("New connection")
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    print("Client disconnected")
+
+
+@socketio.on("join")
+def on_join(data):
+    print("on join data: ", data)
+    print("session: ", session)
+
+    # user_id = session["user_id"]
+    user_id = data["user_id"]
+    order_id = data["order_id"]
+
+    # add the user to a room based on the order_id passed
+    join_room(order_id)
+
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
+    if order["deliverer"]["user_id"] == user_id:
+        emit("order:deliverer", order["deliverer"], to=order_id)
+
+    else:
+        send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
+    
+    msg = "The user has been successfully added to the room " + order_id
+    return json.success_response_json(True, msg)
+
+
 # Return data validation errors as a JSON object
 @app.errorhandler(422)
 @app.errorhandler(400)
@@ -719,6 +827,7 @@ docs.register(update_order)
 docs.register(make_delivery)
 docs.register(get_my_deliverer)
 docs.register(get_order_status)
+docs.register(retrieve_get_code)
 docs.register(match)
 docs.register(unmatch)
 docs.register(cancel_order)

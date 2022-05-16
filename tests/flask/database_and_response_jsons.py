@@ -3,12 +3,21 @@ import time
 from datetime import datetime
 
 
-def create_user_json(user_info, password):
+def create_user_json(user_info, password=None):
     return {
         "acc_active": True,
         "password": password,
         "user_info": user_info,
         "delivery_info": None
+    }
+
+
+def create_user_info_json(email, username, name=None, phone_num=None):
+    return {
+        "email": email,
+        "name": name,
+        "username": username,
+        "phone_num": phone_num
     }
 
 
@@ -108,12 +117,7 @@ def show_deliveries_response_json(succeeded, msg, deliveries):
     }
 
 
-def match_unmatch_customer_json(user_id=None, user_info=None, order_status="matched"):
-    deliverer = {
-        "user_id": user_id,
-        "user_info": user_info
-    } if user_id else None
-
+def match_unmatch_customer_json(deliverer=None, order_status="matched"):
     return {
         "deliverer": deliverer,
         "order_status": order_status
@@ -135,7 +139,7 @@ def login_response_json(succeeded, msg, user_id, user_info, acc_active):
     }
 
 
-def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
+def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                             net_id_email, phone_num, is_new_login, authentication_date):
     return {
         "succeeded": succeeded,
@@ -148,15 +152,19 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name,
             "user_info": {
                 "email": net_id_email,
                 "name": name,
+                "username": username,
                 "phone_num": phone_num
             }
         }
     }
 
 
-def create_acc_response_json(succeeded, msg, user_id=None, acc_active=None):
+def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_active=None):
     user = {
         "user_id": user_id,
+        "user_info": {
+            "username": username
+        },
         "acc_active": acc_active
     } if user_id else None
 
@@ -216,13 +224,11 @@ def start_delivery_response_json(unmatched_users):
     }
 
 
-def get_my_deliverer_response(succeeded, msg, deliverer_info):
+def get_my_deliverer_response(succeeded, msg, deliverer):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "deliverer": {
-            "deliverer_info": deliverer_info
-        }
+        "deliverer": deliverer
     }
 
 
