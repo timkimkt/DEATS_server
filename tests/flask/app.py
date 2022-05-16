@@ -426,6 +426,7 @@ def order_delivery(**kwargs):
                                  kwargs["order"]["GET_code"])).inserted_id
 
     if order_id:
+        socketio.emit("order:new", {})  # announce to all connected clients that a new order has been created
         msg = "The order request has been created successfully"
 
     else:
