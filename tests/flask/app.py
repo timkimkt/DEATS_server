@@ -452,6 +452,7 @@ def update_order(**kwargs):
     succeeded = 0
     order_id = kwargs["order"]["order_id"]
     msg = "The order with id, " + order_id + ", doesn't exist"
+    updated_payload = {}  # payload to push to the room for the order
     for key, value in kwargs["order"].items():
         if key != "order_id":
             print("key: ", key, " value: ", value)
@@ -460,10 +461,17 @@ def update_order(**kwargs):
             if not result.matched_count:  # return immediately if the order doesn't exist
                 return json.success_response_json(bool(succeeded), msg)
 
-            succeeded = max(succeeded, result.modified_count)
+            if result.modified_count:
+                succeeded = 1
+                updated_payload[key] = value
 
-    msg = "The user's order has been updated" if succeeded else "The request wasn't successful. No new info was " \
-                                                                "provided"
+    if succeeded:
+        socketio.emit("order:update", updated_payload, to=order_id)
+        msg = "The user's order has been updated"
+
+    else:
+        "The request wasn't successful. No new info was provided"
+        
     return json.success_response_json(bool(succeeded), msg)
 
 
