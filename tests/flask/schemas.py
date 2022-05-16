@@ -120,6 +120,7 @@ class UpdateOrderInfoSchema(Schema):
     pickup_loc = fields.Nested(LocationSchema(), load_only=True)
     drop_loc = fields.Nested(LocationSchema(), load_only=True)
     GET_code = fields.Str(load_only=True)
+    order_status = fields.Str(load_only=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
