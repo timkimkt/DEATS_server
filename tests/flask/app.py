@@ -429,7 +429,7 @@ def order_delivery(**kwargs):
                                  kwargs["order"]["GET_code"])).inserted_id
 
     if order_id:
-        socketio.emit("cus:new:all", {})  # announce to all connected clients that a new order has been created
+        socketio.emit("cus:new:all", order_id)  # announce to all connected clients that a new order has been created
         msg = "The order request has been created successfully"
 
     else:
@@ -490,7 +490,7 @@ def update_order(**kwargs):
         # skip if the only key updated is the GET_code
         # GET_code is only relevant at the time of delivery
         if len(updated_payload) > 1 or "GET_code" not in updated_payload:
-            socketio.emit("cus:update:all", {})
+            socketio.emit("cus:update:all", order_id)
 
         msg = "The user's order has been updated"
 
@@ -542,7 +542,7 @@ def update_order_status(**kwargs):
 
     if succeeded:
         msg = "The user's order status has been updated"
-        socketio.emit("del:order_status:cus", {"order_status": order_status}, to=order_id)
+        socketio.emit("del:order_status:cus", order_status, to=order_id)
 
     else:
         msg = "The request wasn't successful. No new info was provided"
@@ -764,11 +764,11 @@ def unmatch(**kwargs):
         msg = "You can't unmatch the deliverer from this order. You're not the creator or the deliverer for the order"
 
     elif result.modified_count:
-        socketio.emit("cus:unmatch:del", {"reason": kwargs["reason"]}, to=order_id)
+        socketio.emit("cus:unmatch:del", {"order_id": order_id, "reason": kwargs["reason"]}, to=order_id)
 
         # announce to all connected clients that an order has been unmatched and is now available
         # clients would have to call make_del to get the fresh update
-        socketio.emit("cus:unmatch:all", {"order_id": kwargs["order_id"]})
+        socketio.emit("cus:unmatch:all", order_id)
 
         msg = "Request completed. Order with id, " + order_id + " is back to pending status"
 
@@ -823,7 +823,7 @@ def cancel_order(**kwargs):
 
         # announce to all connected clients that an order has been canceled and is now available
         # clients would have to take the necessary action to remove the order from their list of unmatched orders
-        socketio.emit("cus:cancel:all", {"order_id": kwargs["order_id"]})
+        socketio.emit("cus:cancel:all", order_id)
 
         msg = "Request completed. Order with id, " + order_id + " has been canceled"
 
@@ -888,7 +888,7 @@ def on_join(data):
 
     order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if order["deliverer"]["user_id"] == user_id:
-        emit("del:match:cus", order["deliverer"], to=order_id)
+        emit("del:match:cus", {"order_id": order_id, "deliverer": order["deliverer"]}, to=order_id)
 
     else:
         send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
