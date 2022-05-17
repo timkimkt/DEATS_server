@@ -703,8 +703,8 @@ def match(**kwargs):
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
 
-        # notify the customer that they've matched with a deliverer
-        socketio.send("Matched", to=kwargs["order_id"])
+        # announce to all connected clients that an order has been matched and no longer available
+        socketio.emit("order:matched", {"order_id": kwargs["order_id"]})
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
@@ -762,6 +762,11 @@ def unmatch(**kwargs):
 
     elif result.modified_count:
         socketio.emit("order:unmatch", {"reason": kwargs["reason"]}, to=order_id)
+
+        # announce to all connected clients that an order has been unmatched and is now available
+        # clients would have to call make_del to get the fresh update
+        socketio.emit("order:unmatched", {"order_id": kwargs["order_id"]})
+
         msg = "Request completed. Order with id, " + order_id + " is back to pending status"
 
     else:
@@ -812,6 +817,11 @@ def cancel_order(**kwargs):
 
     if result.modified_count:  # Check for order cancellation
         socketio.emit("order:cancel", {"reason": kwargs["reason"]}, to=order_id)
+
+        # announce to all connected clients that an order has been unmatched and is now available
+        # clients would have to take the necessary action to remove the order from their list of unmatched orders
+        socketio.emit("order:unmatched", {"order_id": kwargs["order_id"]})
+
         msg = "Request completed. Order with id, " + order_id + " has been canceled"
 
     else:
