@@ -134,6 +134,22 @@ class UpdateOrderSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class UpdateOrderStatusOrderSchema(Schema):
+    order_id = fields.Str(required=True)
+    order_status = fields.Str(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class UpdateOrderStatusSchema(Schema):
+    user_id = fields.Str(required=True)
+    order = fields.Nested(UpdateOrderStatusOrderSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class MakeDelInfoSchema(Schema):
     leaving_from = fields.Nested(LocationSchema(), required=True)
     destination = fields.Nested(LocationSchema(), required=True)
@@ -161,6 +177,7 @@ class OrderIdSchema(Schema):
 class UserIdOrderIdSchema(Schema):
     user_id = fields.Str(required=True)
     order_id = fields.Str(required=True)
+    reason = fields.Str(missing=None)
 
     class Meta:
         unknown = UNKNOWN_VALUE

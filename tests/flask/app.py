@@ -15,6 +15,7 @@ from flask_session import Session
 from logic.customer_finder import CustomerFinder
 from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
+from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
@@ -426,6 +427,7 @@ def order_delivery(**kwargs):
                                  kwargs["order"]["GET_code"])).inserted_id
 
     if order_id:
+        socketio.emit("order:new", {})  # announce to all connected clients that a new order has been created
         msg = "The order request has been created successfully"
 
     else:
@@ -439,7 +441,7 @@ def order_delivery(**kwargs):
 @app.route("/update_order/", methods=['POST'])
 @use_kwargs(UpdateOrderSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for updating an existing order", tags=['Orders'])
+@doc(description="Endpoint for updating an existing order. To be called only by customers", tags=['Orders'])
 def update_order(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -449,21 +451,99 @@ def update_order(**kwargs):
     if status_check_failed:
         return status_check_failed
 
-    succeeded = 0
+    # Ensure the order exists
     order_id = kwargs["order"]["order_id"]
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
+    if not order:
+        msg = "The order with id, " + order_id + ", doesn't exist"
+        return json.success_response_json(False, msg)
+
+    # Ensure the order is not canceled
+    if order["order_status"] == "canceled":
+        msg = "The request was unsuccessful. The order was canceled"
+        return json.success_response_json(False, msg)
+
+    # Ensure the user making the update is the customer
+    if order["customer"]["user_id"] != session["user_id"]:
+        msg = "The request was unsuccessful. You're not the deliverer for this order"
+        return json.success_response_json(False, msg)
+
+    succeeded = 0
     msg = "The order with id, " + order_id + ", doesn't exist"
+    updated_payload = {}  # payload to push to the room for the order
     for key, value in kwargs["order"].items():
         if key != "order_id":
             print("key: ", key, " value: ", value)
             result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
 
-            if not result.matched_count:  # return immediately if the order doesn't exist
-                return json.success_response_json(bool(succeeded), msg)
+            if result.modified_count:
+                succeeded = 1
+                updated_payload[key] = value
 
-            succeeded = max(succeeded, result.modified_count)
+    if succeeded:
+        # announce to all connected clients that an existing order has been updated
+        # clients are expected to call make_del to get the fresh update upon receiving this event
+        # skip if the only key updated is the GET_code
+        # GET_code is only relevant at the time of delivery
+        if len(updated_payload) > 1 or "GET_code" not in updated_payload:
+            socketio.emit("order:update", {})
 
-    msg = "The user's order has been updated" if succeeded else "The request wasn't successful. No new info was " \
-                                                                "provided"
+        socketio.emit("order:update", updated_payload, to=order_id)
+        msg = "The user's order has been updated"
+
+    else:
+        "The request wasn't successful. No new info was provided"
+
+    return json.success_response_json(bool(succeeded), msg)
+
+
+@app.route("/update_order_status/", methods=['POST'])
+@use_kwargs(UpdateOrderStatusSchema())
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for updating the order status of an existing order. To be called only by deliverers",
+     tags=['Orders'])
+def update_order_status(**kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    # Ensure the status update value is permitted
+    order_status = kwargs["order"]["order_status"]
+    if order_status not in ORDER_STATUS_UPDATE_VALUES or not order_status.contains("heading to"):
+        msg = "The request was aborted. The order status value provided is not permitted"
+        return json.success_response_json(False, msg)
+
+    # Ensure the order exists
+    order_id = kwargs["order"]["order_id"]
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
+    if not order:
+        msg = "The order with id, " + order_id + ", doesn't exist"
+        return json.success_response_json(False, msg)
+
+    # Ensure the order is not canceled
+    if order["order_status"] == "canceled":
+        msg = "The request was unsuccessful. The order was canceled"
+        return json.success_response_json(False, msg)
+
+    # Ensure the user making the update is the deliverer
+    if order["deliverer"]["user_id"] != session["user_id"]:
+        msg = "The request was unsuccessful. You're not the deliverer for this order"
+        return json.success_response_json(False, msg)
+
+    succeeded = db.orders.update_one({"_id": ObjectId(order_id)},
+                                     {"$set": {"order_status": kwargs["order"]["status"]}}).modified_count
+
+    if succeeded:
+        msg = "The user's order has been updated"
+        socketio.emit("deliverer:update", {"order_status": order_status}, to=order_id)
+
+    else:
+        msg = "The request wasn't successful. No new info was provided"
+
     return json.success_response_json(bool(succeeded), msg)
 
 
@@ -623,8 +703,8 @@ def match(**kwargs):
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
 
-        # notify the customer that they've matched with a deliverer
-        socketio.send("Matched", to=kwargs["order_id"])
+        # announce to all connected clients that an order has been matched and no longer available
+        socketio.emit("order:matched", {"order_id": kwargs["order_id"]})
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
@@ -650,10 +730,12 @@ def unmatch(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    order_id = kwargs["order_id"]
+
     # Ensure the order exists
-    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if not order:
-        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + order_id + ", doesn't exist"
         return json.success_response_json(False, msg)
 
     # Ensure the order is not canceled
@@ -672,14 +754,20 @@ def unmatch(**kwargs):
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        json.unmatch_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
+        json.unmatch_order_filter_json(ObjectId(order_id), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="pending")}, )
 
     if not result.matched_count:
         msg = "You can't unmatch the deliverer from this order. You're not the creator or the deliverer for the order"
 
     elif result.modified_count:
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " is back to pending status"
+        socketio.emit("order:unmatch", {"reason": kwargs["reason"]}, to=order_id)
+
+        # announce to all connected clients that an order has been unmatched and is now available
+        # clients would have to call make_del to get the fresh update
+        socketio.emit("order:unmatched", {"order_id": kwargs["order_id"]})
+
+        msg = "Request completed. Order with id, " + order_id + " is back to pending status"
 
     else:
         msg = "The request was unsuccessful. The order did not have a deliverer to unmatch from"
@@ -699,10 +787,12 @@ def cancel_order(**kwargs):
     if status_check_failed:
         return status_check_failed
 
+    order_id = kwargs["order_id"]
+
     # Ensure the order exists
-    order = db.orders.find_one({"_id": (ObjectId(kwargs["order_id"]))})
+    order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if not order:
-        msg = "The order with id, " + kwargs["order_id"] + ", doesn't exist"
+        msg = "The order with id, " + order_id + ", doesn't exist"
         return json.success_response_json(False, msg)
 
     # Ensure the user has permission to cancel the order
@@ -722,11 +812,17 @@ def cancel_order(**kwargs):
         return json.success_response_json(False, msg)
 
     result = db.orders.update_one(
-        json.cancel_order_filter_json(ObjectId(kwargs["order_id"]), session["user_id"]),
+        json.cancel_order_filter_json(ObjectId(order_id), session["user_id"]),
         {"$set": json.match_unmatch_customer_json(order_status="canceled")}, )
 
     if result.modified_count:  # Check for order cancellation
-        msg = "Request completed. Order with id, " + kwargs["order_id"] + " has been canceled"
+        socketio.emit("order:cancel", {"reason": kwargs["reason"]}, to=order_id)
+
+        # announce to all connected clients that an order has been unmatched and is now available
+        # clients would have to take the necessary action to remove the order from their list of unmatched orders
+        socketio.emit("order:unmatched", {"order_id": kwargs["order_id"]})
+
+        msg = "Request completed. Order with id, " + order_id + " has been canceled"
 
     else:
         msg = "Request unsuccessful"
@@ -760,7 +856,7 @@ def show_deliveries(**kwargs):
 
     orders = db.orders.find(json.show_deliveries_input_json(session["user_id"]))
 
-    msg = "Here's a list of deliveries you've made" if len(list(orders.clone()))\
+    msg = "Here's a list of deliveries you've made" if len(list(orders.clone())) \
         else "You've not made any deliveries yet"
     return json.show_deliveries_response_json(True, msg, orders)
 
@@ -793,7 +889,7 @@ def on_join(data):
 
     else:
         send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
-    
+
     msg = "The user has been successfully added to the room " + order_id
     return json.success_response_json(True, msg)
 
