@@ -467,6 +467,13 @@ def update_order(**kwargs):
                 updated_payload[key] = value
 
     if succeeded:
+        # announce to all connected clients that an existing order has been updated
+        # clients are expected to call make_del to get the fresh update upon receiving this event
+        # skip if the only key updated is "order_status"
+        # order status updates are useful only to the customer and the deliverer
+        if len(updated_payload) > 1 or "order_status" not in updated_payload:
+            socketio.emit("order:new", {})
+
         socketio.emit("order:update", updated_payload, to=order_id)
         msg = "The user's order has been updated"
 
