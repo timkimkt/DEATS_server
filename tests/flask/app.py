@@ -429,15 +429,13 @@ def order_delivery(**kwargs):
                                  kwargs["order"]["GET_code"])).inserted_id
 
     if order_id:
-        socketio.emit("cus:new:all", order_id)  # announce to all connected clients that a new order has been created
+        socketio.emit("cus:new:all", str(order_id))  # announce to all connected clients that a new order's been created
         msg = "The order request has been created successfully"
 
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
 
-    order_id = str(order_id)
-
-    return json.order_delivery_response_json(bool(order_id), msg, order_id)
+    return json.order_delivery_response_json(bool(order_id), msg, str(order_id))
 
 
 @app.route("/update_order/", methods=['POST'])
