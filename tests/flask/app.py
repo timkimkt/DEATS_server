@@ -483,14 +483,16 @@ def update_order(**kwargs):
                 updated_payload[key] = value
 
     if succeeded:
-        socketio.emit("cus:update:del", updated_payload, to=order_id)
+        if order["deliverer"]:
+            socketio.emit("cus:update:del", updated_payload, to=order_id)
 
-        # announce to all connected clients that an existing order has been updated
-        # clients are expected to call make_del to get the fresh update upon receiving this event
-        # skip if the only key updated is the GET_code
-        # GET_code is only relevant at the time of delivery
-        if len(updated_payload) > 1 or "GET_code" not in updated_payload:
-            socketio.emit("cus:update:all", order_id)
+        else:
+            # announce to all connected clients that an existing order has been updated
+            # clients are expected to call make_del to get the fresh update upon receiving this event
+            # skip if the only key updated is the GET_code
+            # GET_code is only relevant at the time of delivery
+            if len(updated_payload) > 1 or "GET_code" not in updated_payload:
+                socketio.emit("cus:update:all", order_id)
 
         msg = "The user's order has been updated"
 
@@ -819,11 +821,13 @@ def cancel_order(**kwargs):
         {"$set": json.match_unmatch_customer_json(order_status="canceled")}, )
 
     if result.modified_count:  # Check for order cancellation
-        socketio.emit("cus:cancel:del", {"reason": kwargs["reason"]}, to=order_id)
+        if order["deliverer"]:
+            socketio.emit("cus:cancel:del", {"reason": kwargs["reason"]}, to=order_id)
 
-        # announce to all connected clients that an order has been canceled and is now available
-        # clients would have to take the necessary action to remove the order from their list of unmatched orders
-        socketio.emit("cus:cancel:all", order_id)
+        else:
+            # announce to all connected clients that an order has been canceled and is now available
+            # clients would have to take the necessary action to remove the order from their list of unmatched orders
+            socketio.emit("cus:cancel:all", order_id)
 
         msg = "Request completed. Order with id, " + order_id + " has been canceled"
 
