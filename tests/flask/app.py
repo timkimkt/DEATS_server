@@ -315,9 +315,9 @@ def sso_login():
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
 def sso_logout():
-    login_failed = user_is_logged_in()
-    if login_failed:
-        return login_failed
+    # login_failed = user_is_logged_in()
+    # if login_failed:
+    #     return login_failed
 
     logout_url = cas_client.get_logout_url()
     print("logout_url", logout_url)
