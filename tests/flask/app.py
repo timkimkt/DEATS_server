@@ -706,8 +706,8 @@ def match(**kwargs):
     if result.modified_count:
         msg = "Request completed. You've matched with the customer on the order"
 
-        # announce to all connected clients that an order has been matched and no longer available
-        socketio.emit("del:match:all", {"order_id": kwargs["order_id"]})
+        # announce to all connected clients that the order has been matched and no longer available
+        socketio.emit("del:match:all", kwargs["order_id"])
 
     elif order["deliverer"]["user_id"] == session["user_id"]:
         msg = "You've already matched with the customer on this order"
