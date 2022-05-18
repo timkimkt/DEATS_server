@@ -3,8 +3,8 @@ from logic.customer import *
 
 class Deliverer:
 
-    def __init__(self, coordinates, id=None, order=None, status="WAITING"):
-        self.id = id                     # e.g. d1
+    def __init__(self, user_id, coordinates, order=None, status="WAITING"):
+        self.user_id = user_id
         self.coordinates = coordinates   # [x coordinate, y coordinate]
 
         self.active = False              # first check if deliverer is active

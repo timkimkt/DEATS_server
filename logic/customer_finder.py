@@ -3,6 +3,8 @@ from bson.objectid import ObjectId
 from logic.customer import Customer
 from logic.deliverer import Deliverer
 from math import sqrt
+
+from tests.flask import database_and_response_jsons
 from tests.flask.mongo_client_connection import MongoClientConnection
 import heapq
 
@@ -10,25 +12,30 @@ db = MongoClientConnection.get_database()
 
 
 def compute_distance(loc1, loc2):
-    return sqrt((loc2['x'] - loc1['x']) ** 2 + (loc2['y'] - loc1['y']) ** 2)
+    return sqrt((loc2['lat'] - loc1['lat']) ** 2 + (loc2['long'] - loc1['long']) ** 2)
 
 
 class CustomerFinder:
-    def __init__(self, deliverer_loc, customers):
-        self.deliverer = Deliverer(coordinates=deliverer_loc)
-        self.customers = customers
+    def __init__(self, deliverer_id, deliverer_loc, orders):
+        self.deliverer = Deliverer(deliverer_id, coordinates=deliverer_loc["coordinates"])
+        self.orders = orders
         self.queue = []
 
     def sort_customers(self):
-        for customer_json in self.customers:
-            print("customer: ", customer_json)
+        for order_json in self.orders:
+            print("customer id:", order_json["customer"]["user_id"])
+            print("deliverer id:", self.deliverer.user_id)
+            if order_json["customer"]["user_id"] == self.deliverer.user_id:
+                continue
 
-            score = self.compute_score(customer_json["pickup_loc"], customer_json["drop_loc"])
+            print("order: ", order_json)
+
+            score = self.compute_score(
+                order_json["pickup_loc"]["coordinates"], order_json["drop_loc"]["coordinates"])
             print("score: ", score)
-            print("customer's id: ", str(customer_json["_id"]))
-            heapq.heappush(self.queue, Customer(customer_json["customer_id"], str(customer_json["_id"]),
-                                                customer_json["pickup_loc"], customer_json["drop_loc"],
-                                                customer_json["pickup_loc_name"], customer_json["drop_loc_name"], score))
+            print("customer: ", str(order_json["customer"]))
+            heapq.heappush(self.queue, Customer(order_json["customer"], str(order_json["_id"]),
+                                                order_json["pickup_loc"], order_json["drop_loc"], score))
 
     def get_k_least_score_customers(self, k):
         least_scored_customers = []
@@ -40,17 +47,14 @@ class CustomerFinder:
             # a customer...adding just in case deliverers want to call customers to find out more details
             # before they match with them
             # Might take them out in the future if they cause privacy issues
-            print("this customer", customer.customer_id)
-            result = db.users.find_one({"_id": ObjectId(customer.customer_id)},
-                                       {"name": 1, "email": 1, "phone_num": 1, "_id": 0})
-            result["pickup_loc_name"] = customer.pickup_loc_name
-            result["drop_loc_name"] = customer.drop_loc_name
-            result["customer_id"] = customer.customer_id
-            result["pickup_loc"] = customer.pickup_loc
-            result["drop_loc"] = customer.drop_loc
-            result["order_id"] = customer.order_id
+            print("this customer", customer.customer)
+            order_json = database_and_response_jsons.order_json(
+                customer.order_id, customer.pickup_loc, customer.drop_loc)
 
-            least_scored_customers.append(result)
+            customer_and_order_json = database_and_response_jsons.customer_and_order_json(
+                customer.customer, order_json["order"])
+
+            least_scored_customers.append(customer_and_order_json)
             i += 1
 
         print("result", least_scored_customers)

@@ -15,22 +15,21 @@ def validate_password(password):
     result = policy.test(password)
 
     if result:
-        error_msg = "The provided password lacks: "
-        i = 0
+        error_msg_prefix = "The provided DEATS password: "
+        error_array = []
         for failed_test in result:
-            error_msg += "\n   " + str(i) + ") " + map_failed_test_to_error_msg(type(failed_test))
-            i += 1
+            error_array.append(map_failed_test_to_error_msg(type(failed_test)))
 
-        raise ValueError(error_msg)
+        raise ValueError(error_msg_prefix + str(error_array))
 
 
 switcher = {
-    password_strength.tests.Length: "a minimum of 8 characters",
-    password_strength.tests.Uppercase: "at least one uppercase",
-    password_strength.tests.Numbers: "at least 1 number",
-    password_strength.tests.Special: "at least 1 special character",
-    password_strength.tests.NonLetters: "at least 2 non-letters",
-    password_strength.tests.Strength: "good strength",
+    password_strength.tests.Length: "lacks the required minimum of 8 characters",
+    password_strength.tests.Uppercase: "should have at least one uppercase letter",
+    password_strength.tests.Numbers: "should have at least 1 number",
+    password_strength.tests.Special: "should have at least 1 special character",
+    password_strength.tests.NonLetters: "should have at least 2 non-letters",
+    password_strength.tests.Strength: "is not strong enough"
 }
 
 
