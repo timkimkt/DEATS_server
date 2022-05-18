@@ -155,9 +155,9 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                 "email": net_id_email,
                 "name": name,
                 "username": username,
-                "DEATS_tokens": 3,
                 "phone_num": phone_num
-            }
+            },
+            "DEATS_tokens": 3
         }
     }
 
