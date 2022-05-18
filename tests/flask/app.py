@@ -312,7 +312,7 @@ def sso_login():
 
 
 @app.route("/sso_logout/")
-@marshal_with(None, code=200, description="Response json")
+@marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
 def sso_logout():
     login_failed = user_is_logged_in()
