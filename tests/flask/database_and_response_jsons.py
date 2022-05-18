@@ -8,6 +8,7 @@ def create_user_json(user_info, password=None):
         "acc_active": True,
         "password": password,
         "user_info": user_info,
+        "DEATS_tokens": "3",
         "delivery_info": None
     }
 
@@ -153,6 +154,7 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                 "email": net_id_email,
                 "name": name,
                 "username": username,
+                "DEATS_tokens": "3",
                 "phone_num": phone_num
             }
         }
@@ -165,7 +167,8 @@ def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_ac
         "user_info": {
             "username": username
         },
-        "acc_active": acc_active
+        "acc_active": acc_active,
+        "DEATS_tokens": "3"
     } if user_id else None
 
     return {
