@@ -17,6 +17,7 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
+from tests.flask.utils.payment import compute_token_fee
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -412,7 +413,22 @@ def order_delivery(**kwargs):
         return status_check_failed
 
     # Get the customer info from the db
-    customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "_id": 0})
+    customer = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
+
+    print(customer)
+
+    pickup_loc = kwargs["order"]["pickup_loc"]
+    drop_loc = kwargs["order"]["drop_loc"]
+
+    # make sure they have enough DEATS tokens to make the order
+    num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
+    order_fee = compute_token_fee(pickup_loc["coordinates"], drop_loc["coordinates"], num_unmatched_orders)
+
+    remaining_tokens = customer.pop("DEATS_tokens") - order_fee
+
+    if remaining_tokens < 0:
+        msg = "You don't have enough tokens to make this request"
+        return json.success_response_json(False, msg)
 
     # If the customer passed in new user info to be used at the time of creating the order, use that instead
     if kwargs.get("user_info"):
@@ -423,8 +439,8 @@ def order_delivery(**kwargs):
 
     order_id = db.orders.insert_one(
         json.order_delivery_json(customer,
-                                 kwargs["order"]["pickup_loc"], kwargs["order"]["drop_loc"],
-                                 kwargs["order"]["GET_code"])).inserted_id
+                                 pickup_loc, drop_loc,
+                                 kwargs["order"]["GET_code"], order_fee)).inserted_id
 
     if order_id:
         socketio.emit("order:new", {})  # announce to all connected clients that a new order has been created

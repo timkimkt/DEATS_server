@@ -203,6 +203,7 @@ class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(required=True)
     username = fields.Str(required=True)
+    DEATS_tokens = fields.Float(required=True)
     phone_num = fields.Str(required=True)
 
     class Meta:
