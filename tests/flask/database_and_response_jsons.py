@@ -8,7 +8,7 @@ def create_user_json(user_info, password=None):
         "acc_active": True,
         "password": password,
         "user_info": user_info,
-        "DEATS_tokens": "3",
+        "DEATS_tokens": 3,
         "delivery_info": None
     }
 
@@ -25,7 +25,7 @@ def create_user_info_json(email, username, name=None, phone_num=None):
 # don't need active status: indicated by being put in the order status
 # don't need user type: all orders are requested by a customer
 # need status: delivered, pending, matched, and picked_up to keep track of order and delivery status
-def order_delivery_json(customer, pickup_loc, drop_loc, get_code):
+def order_delivery_json(customer, pickup_loc, drop_loc, get_code, order_fee):
     return {
         "customer": customer,
         "deliverer": None,
@@ -33,7 +33,8 @@ def order_delivery_json(customer, pickup_loc, drop_loc, get_code):
         "drop_loc": drop_loc,
         "GET_code": get_code,
         "order_date": datetime.fromtimestamp(time.time()),
-        "order_status": "pending"
+        "order_status": "pending",
+        "order_fee": order_fee
     }
 
 
@@ -154,7 +155,7 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                 "email": net_id_email,
                 "name": name,
                 "username": username,
-                "DEATS_tokens": "3",
+                "DEATS_tokens": 3,
                 "phone_num": phone_num
             }
         }
@@ -168,7 +169,7 @@ def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_ac
             "username": username
         },
         "acc_active": acc_active,
-        "DEATS_tokens": "3"
+        "DEATS_tokens": 3
     } if user_id else None
 
     return {
