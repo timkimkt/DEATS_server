@@ -426,13 +426,15 @@ def order_delivery(**kwargs):
 
     # make sure they have enough DEATS tokens to make the order
     num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
-    order_fee = compute_token_fee(pickup_loc["coordinates"], drop_loc["coordinates"], num_unmatched_orders)
+    print("number of unmatched orders", num_unmatched_orders)
+    order_fee = compute_token_fee(pickup_loc, drop_loc, num_unmatched_orders)
+    print("order fee:", order_fee)
 
     remaining_tokens = customer.pop("DEATS_tokens") - order_fee
 
     if remaining_tokens < 0:
         msg = "You don't have enough tokens to make this request"
-        return json.success_response_json(False, msg)
+        return json.order_delivery_response_json(False, msg, remaining_tokens, order_fee)
 
     # If the customer passed in new user info to be used at the time of creating the order, use that instead
     if kwargs.get("user_info"):
@@ -453,7 +455,9 @@ def order_delivery(**kwargs):
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
 
-    return json.order_delivery_response_json(bool(order_id), msg, str(order_id))
+    order_id = str(order_id)
+
+    return json.order_delivery_response_json(bool(order_id), msg, remaining_tokens, order_fee, order_id)
 
 
 @app.route("/update_order/", methods=['POST'])

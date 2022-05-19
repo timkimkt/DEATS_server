@@ -193,12 +193,16 @@ def login_request_response_json():
     }
 
 
-def order_delivery_response_json(succeeded, msg, order_id):
+def order_delivery_response_json(succeeded, msg, DEATS_tokens_rem, order_fee, order_id=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
+        "user": {
+            "DEATS_tokens_rem": DEATS_tokens_rem
+        },
         "order": {
-            "order_id": order_id
+            "order_id": order_id,
+            "order_fee": order_fee
         }
     }
 

@@ -266,10 +266,26 @@ class SSOLoginResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class DEATSTokensSchema(Schema):
+    DEATS_tokens = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class OrderResponseSchema(Schema):
+    order_id = fields.Str(required=True)
+    order_fee = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class OrderDelResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    order = fields.Nested(OrderIdSchema(), required=True)
+    user = fields.Nested(DEATSTokensSchema(), required=True)
+    order = fields.Nested(OrderResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
