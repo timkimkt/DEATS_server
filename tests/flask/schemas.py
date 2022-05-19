@@ -203,7 +203,6 @@ class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)
     name = fields.Str(required=True)
     username = fields.Str(required=True)
-    DEATS_tokens = fields.Float(required=True)
     phone_num = fields.Str(required=True)
 
     class Meta:
@@ -214,15 +213,7 @@ class UserResponseSchema(Schema):
     user_id = fields.Str(required=True)
     acc_active = fields.Bool(required=True)
     user_info = fields.Nested(UserInfoResponseSchema(), required=True)
-
-    class Meta:
-        unknown = UNKNOWN_VALUE
-
-
-class UserResponseSchemaWithActiveStatus(Schema):
-    user_id = fields.Str(required=True)
-    acc_active = fields.Bool(required=True)
-    user_info = fields.Nested(UserInfoResponseSchema(), required=True)
+    DEATS_tokens = fields.Float(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -232,6 +223,7 @@ class UserInfoResponse(Schema):
     user_id = fields.Str(required=True)
     user_info = fields.Nested(UserInfoResponseSchema(), required=True)
     acc_active = fields.Bool(required=True)
+    DEATS_tokens = fields.Float(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -249,7 +241,7 @@ class CreateAccResponseSchema(Schema):
 class LoginResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    user = fields.Nested(UserResponseSchemaWithActiveStatus(), required=True)
+    user = fields.Nested(UserResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -260,7 +252,7 @@ class SSOLoginResponseSchema(Schema):
     msg = fields.Str(required=True)
     is_new_login = fields.Str(required=True)
     authentication_date = fields.Str(required=True)
-    user = fields.Nested(UserResponseSchemaWithActiveStatus(), required=True)
+    user = fields.Nested(UserResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -345,7 +337,7 @@ class GETCodeResponseSchema(Schema):
 class MatchResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    matched_customer = fields.Nested(UserResponseSchemaWithActiveStatus(), required=True)
+    matched_customer = fields.Nested(UserResponseSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE

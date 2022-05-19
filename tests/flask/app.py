@@ -412,6 +412,7 @@ def order_delivery(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -430,11 +431,12 @@ def order_delivery(**kwargs):
     order_fee = compute_token_fee(pickup_loc, drop_loc, num_unmatched_orders)
     print("order fee:", order_fee)
 
-    remaining_tokens = customer.pop("DEATS_tokens") - order_fee
+    curr_tokens = customer.pop("DEATS_tokens")
+    remaining_tokens = curr_tokens - order_fee
 
     if remaining_tokens < 0:
-        msg = "You don't have enough tokens to make this request"
-        return json.order_delivery_response_json(False, msg, remaining_tokens, order_fee)
+        msg = "You don't have enough DEATS tokens to make this request"
+        return json.order_delivery_response_json(False, msg, curr_tokens, order_fee)
 
     # If the customer passed in new user info to be used at the time of creating the order, use that instead
     if kwargs.get("user_info"):
@@ -452,8 +454,17 @@ def order_delivery(**kwargs):
         socketio.emit("cus:new:all", str(order_id))  # announce to all connected clients that a new order's been created
         msg = "The order request has been created successfully"
 
+        # charge the user if the order request is successful
+        result = db.users.update_one({"_id": ObjectId(session["user_id"])},
+                                     {"$set": {"DEATS_tokens": remaining_tokens}})
+
+        if not result.modified_count:
+            msg = "Something went wrong. Try again later"
+            return json.success_response_json(False, msg)
+
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
+        remaining_tokens = curr_tokens
 
     order_id = str(order_id)
 

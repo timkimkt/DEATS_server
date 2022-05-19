@@ -3,12 +3,15 @@ import time
 from datetime import datetime
 
 
+FREE_DEATS_TOKENS = 3
+
+
 def create_user_json(user_info, password=None):
     return {
         "acc_active": True,
         "password": password,
         "user_info": user_info,
-        "DEATS_tokens": 3,
+        "DEATS_tokens": FREE_DEATS_TOKENS,
         "delivery_info": None
     }
 
@@ -157,7 +160,7 @@ def sso_login_response_json(succeeded, msg, user_id, acc_active, name, username,
                 "username": username,
                 "phone_num": phone_num
             },
-            "DEATS_tokens": 3
+            "DEATS_tokens": FREE_DEATS_TOKENS
         }
     }
 
@@ -169,7 +172,7 @@ def create_acc_response_json(succeeded, msg, user_id=None, username=None, acc_ac
             "username": username
         },
         "acc_active": acc_active,
-        "DEATS_tokens": 3
+        "DEATS_tokens": FREE_DEATS_TOKENS
     } if user_id else None
 
     return {
@@ -193,12 +196,12 @@ def login_request_response_json():
     }
 
 
-def order_delivery_response_json(succeeded, msg, DEATS_tokens_rem, order_fee, order_id=None):
+def order_delivery_response_json(succeeded, msg, DEATS_tokens, order_fee, order_id=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
         "user": {
-            "DEATS_tokens_rem": DEATS_tokens_rem
+            "DEATS_tokens": DEATS_tokens
         },
         "order": {
             "order_id": order_id,
