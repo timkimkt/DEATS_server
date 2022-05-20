@@ -17,7 +17,7 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
-from tests.flask.utils.payment import compute_token_fee
+from tests.flask.utils.payment import compute_token_fee, compute_new_fee
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -502,7 +502,35 @@ def update_order(**kwargs):
         msg = "The request was unsuccessful. You're not the deliverer for this order"
         return json.success_response_json(False, msg)
 
+    # Make sure the customer has enough DEATS tokens to do a location update
+    old_pickup_loc = order["pickup_loc"]
+    old_drop_loc = order["drop"]
+    old_order_fee = order["order_fee"]
+
+    # Use the provided pickup or (drop location) if there is one
+    # Doesn't matter if the location update will succeed or not
+    # i.e. if it will succeed, then it is exactly what we want to use in the new fee computation
+    # If not, then that means it is the same as what is already on the order, and we can just use that
+    new_pickup_loc = kwargs["order"]["pickup_loc"] if kwargs.get("order").get("pickup_loc") else old_pickup_loc
+    new_drop_loc = kwargs["order"]["drop_loc"] if kwargs.get("order").get("drop_loc") else old_drop_loc
+
+    new_order_fee = compute_new_fee(new_pickup_loc, new_drop_loc,
+                                    old_pickup_loc, old_drop_loc, old_order_fee)
+    print("new order fee:", new_order_fee)
+
+    customer = db.users.find_one({"_id": ObjectId(session["user_id"])},
+                                 {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
+    print(customer)
+
+    curr_tokens = customer.pop("DEATS_tokens")
+    remaining_tokens = curr_tokens + old_order_fee - new_order_fee
+
+    if remaining_tokens < 0:
+        msg = "You don't have enough DEATS tokens to make this location update"
+        return json.order_delivery_loc_update_response_json(False, msg, curr_tokens, new_order_fee, old_order_fee)
+
     succeeded = 0
+    charge_new_fee = False
     msg = "The order with id, " + order_id + ", doesn't exist"
     updated_payload = {}  # payload to push to the room for the order
     for key, value in kwargs["order"].items():
@@ -514,7 +542,22 @@ def update_order(**kwargs):
                 succeeded = 1
                 updated_payload[key] = value
 
+                # Check for whether a new delivery fee should be charged
+                # requires just one or both to be updated
+                if key == "pickup_loc" or key == "drop_loc":
+                    charge_new_fee = True
+
     if succeeded:
+        if charge_new_fee:
+            db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {"order_fee": new_order_fee}})
+
+        else:
+            # if the order is not charged, the remaining tokens is the same as the curr tokens the user have
+            remaining_tokens = curr_tokens
+
+        msg = "The user's order has been updated"
+
+        # tell the deliverer the updates if there is one
         if order["deliverer"]:
             socketio.emit("cus:update:del", updated_payload, to=order_id)
 
@@ -526,12 +569,11 @@ def update_order(**kwargs):
             if len(updated_payload) > 1 or "GET_code" not in updated_payload:
                 socketio.emit("cus:update:all", order_id)
 
-        msg = "The user's order has been updated"
-
     else:
         "The request wasn't successful. No new info was provided"
 
-    return json.success_response_json(bool(succeeded), msg)
+    return json.order_delivery_loc_update_response_json(bool(succeeded), msg,
+                                                        remaining_tokens, new_order_fee, old_order_fee)
 
 
 @app.route("/update_order_status/", methods=['POST'])

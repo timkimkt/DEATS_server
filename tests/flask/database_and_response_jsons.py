@@ -210,6 +210,20 @@ def order_delivery_response_json(succeeded, msg, DEATS_tokens, order_fee, order_
     }
 
 
+def order_delivery_loc_update_response_json(succeeded, msg, DEATS_tokens, new_order_fee, old_order_fee):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "user": {
+            "available_DEATS_tokens": DEATS_tokens
+        },
+        "order": {
+            "new_order_fee": new_order_fee,
+            "old_order_fee": old_order_fee
+        }
+    }
+
+
 def order_json(order_id, pickup_loc, drop_loc):
     return {
         "order": {
