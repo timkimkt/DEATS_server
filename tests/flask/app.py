@@ -535,7 +535,7 @@ def update_order_status(**kwargs):
 
     # Ensure the status update value is permitted
     order_status = kwargs["order"]["order_status"]
-    if order_status not in ORDER_STATUS_UPDATE_VALUES or not order_status.contains("heading to"):
+    if order_status not in ORDER_STATUS_UPDATE_VALUES or "heading to" not in order_status:
         msg = "The request was aborted. The order status value provided is not permitted"
         return json.success_response_json(False, msg)
 
