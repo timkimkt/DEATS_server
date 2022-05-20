@@ -38,9 +38,10 @@ app.config.from_object(__name__)
 # Session(app)
 
 # Set up documentation for endpoints
+SERVER_TYPE = getenv("SERVER_TYPE")
 app.config.update({
     'APISPEC_SPEC': APISpec(
-        title="DEATS Server API Reference",
+        title=f"DEATS {SERVER_TYPE} Server API Reference",
         version="2.0.0",
         plugins=[MarshmallowPlugin()],
         openapi_version="2.0.0"
@@ -56,6 +57,7 @@ socketio = SocketIO(app, manage_session=True, logger=True, engineio_logger=True)
 docs = FlaskApiSpec(app)
 
 cas_client = None
+
 
 # set up cas client using host url presented at first request
 @app.before_first_request
@@ -76,7 +78,7 @@ def index():
 @app.route("/create_acc/", methods=['POST'])
 @use_kwargs(CreateAccSchema())
 @marshal_with(CreateAccResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for creating an account for a new user", tags=['Account'])
+@doc(description="Endpoint for creating an account for a new user", tags=['Account: All Roles'])
 def create_account(**kwargs):
     try:
         valid_email = validate_email(kwargs["user_info"]["email"])
@@ -124,7 +126,7 @@ def create_account(**kwargs):
 @app.route("/update_acc/", methods=['POST'])
 @use_kwargs(UpdateAccSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for updating an existing account", tags=['Account'])
+@doc(description="Endpoint for updating an existing account", tags=['Account: All Roles'])
 def update_account(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -168,7 +170,7 @@ def update_account(**kwargs):
 @app.route("/delete_acc/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for deleting an existing account", tags=['Account'])
+@doc(description="Endpoint for deleting an existing account", tags=['Account: All Roles'])
 def delete_account(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -187,7 +189,7 @@ def delete_account(**kwargs):
 @app.route("/deactivate_acc/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for deactivating an existing account", tags=['Account'])
+@doc(description="Endpoint for deactivating an existing account", tags=['Account: All Roles'])
 def deactivate_account(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -213,7 +215,7 @@ def deactivate_account(**kwargs):
 @app.route("/reactivate_acc/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for reactivating an existing account in a deactivated state", tags=['Account'])
+@doc(description="Endpoint for reactivating an existing account in a deactivated state", tags=['Account: All Roles'])
 def reactivate_account(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -237,7 +239,8 @@ def reactivate_account(**kwargs):
 
 @app.route("/sso_login/")
 @marshal_with(SSOLoginResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for creating a new account for or logging a user in through Dartmouth SSO", tags=['Account'])
+@doc(description="Endpoint for creating a new account for or logging a user in through Dartmouth SSO",
+     tags=['Account: All Roles'])
 def sso_login():
     next = request.args.get('next')
     service_ticket = request.args.get("ticket")
@@ -313,7 +316,7 @@ def sso_login():
 
 @app.route("/sso_logout/")
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account'])
+@doc(description="Endpoint for logging out a user logged in through Dartmouth SSO", tags=['Account: All Roles'])
 def sso_logout():
     # login_failed = user_is_logged_in()
     # if login_failed:
@@ -330,7 +333,7 @@ def sso_logout():
 @app.route("/login/", methods=['POST'])
 @use_kwargs(LoginSchema())
 @marshal_with(LoginResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for logging a user into an existing non-SSO account", tags=['Account'])
+@doc(description="Endpoint for logging a user into an existing non-SSO account", tags=['Account: All Roles'])
 def login(**kwargs):
     succeeded = False
     user_id = None
@@ -369,7 +372,7 @@ def login(**kwargs):
 @app.route("/logout/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for logging a user out of a non-SSO account", tags=['Account'])
+@doc(description="Endpoint for logging a user out of a non-SSO account", tags=['Account: All Roles'])
 def logout(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -404,7 +407,7 @@ def global_count():
 @app.route("/order_del/", methods=['POST'])
 @use_kwargs(OrderDelSchema())
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for ordering a delivery", tags=["Orders"])
+@doc(description="Endpoint for ordering a delivery", tags=["Orders: Customer Role Only"])
 def order_delivery(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -456,7 +459,8 @@ def order_delivery(**kwargs):
 @app.route("/update_order/", methods=['POST'])
 @use_kwargs(UpdateOrderSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for updating an existing order. To be called only by customers", tags=['Orders'])
+@doc(description="Endpoint for updating an existing order. To be called only by customers",
+     tags=['Orders: Customer Role Only'])
 def update_order(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -519,7 +523,7 @@ def update_order(**kwargs):
 @use_kwargs(UpdateOrderStatusSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating the order status of an existing order. To be called only by deliverers",
-     tags=['Orders'])
+     tags=['Orders: Deliverer Role Only'])
 def update_order_status(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -568,7 +572,7 @@ def update_order_status(**kwargs):
 @app.route("/make_del/", methods=['POST'])
 @use_kwargs(MakeDelSchema())
 @marshal_with(StartDelResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for requesting to make a delivery", tags=['Orders'])
+@doc(description="Endpoint for requesting to make a delivery", tags=['Orders: Deliverer Role Only'])
 def make_delivery(delivery, **kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -595,7 +599,8 @@ def make_delivery(delivery, **kwargs):
 @app.route("/my_deliverer/", methods=['POST'])
 @use_kwargs(OrderIdSchema())
 @marshal_with(GetDelivererResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for getting the current deliverer for an existing order", tags=['Orders'])
+@doc(description="Endpoint for getting the current deliverer for an existing order",
+     tags=['Orders: Customer Role Only'])
 def get_my_deliverer(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -627,7 +632,8 @@ def get_my_deliverer(**kwargs):
 @app.route("/order_status/", methods=['POST'])
 @use_kwargs(UserIdOrderIdSchema())
 @marshal_with(GetOrderStatusResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for getting the order status of an existing order", tags=['Orders'])
+@doc(description="Endpoint for getting the order status of an existing order."
+                 " To be called only by the creator of the order", tags=['Orders: Customer Role Only'])
 def get_order_status(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -655,7 +661,7 @@ def get_order_status(**kwargs):
 @app.route("/get_code/", methods=['POST'])
 @use_kwargs(UserIdOrderIdSchema())
 @marshal_with(GETCodeResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for getting the GET code of an existing order", tags=['Orders'])
+@doc(description="Endpoint for getting the GET code of an existing order", tags=['Orders: All Roles'])
 def retrieve_get_code(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -678,7 +684,7 @@ def retrieve_get_code(**kwargs):
 @app.route("/match/", methods=['POST'])
 @use_kwargs(MatchOrderSchema())
 @marshal_with(MatchResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for matching a deliverer with an existing order", tags=['Orders'])
+@doc(description="Endpoint for matching a deliverer with an existing order", tags=['Orders: Deliverer Role Only'])
 def match(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -738,7 +744,8 @@ def match(**kwargs):
 @app.route("/unmatch/", methods=['POST'])
 @use_kwargs(UserIdOrderIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for un-matching a deliverer from an existing order", tags=['Orders'])
+@doc(description="Endpoint for un-matching a deliverer from an existing order. "
+                 "To be called by either the creator or deliverer on the order only", tags=['Orders: All Roles'])
 def unmatch(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -796,7 +803,8 @@ def unmatch(**kwargs):
 @app.route("/cancel_order/", methods=['POST'])
 @use_kwargs(UserIdOrderIdSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for canceling an existing order. Accessible to only the order creator", tags=['Orders'])
+@doc(description="Endpoint for canceling an existing order. Accessible to only the order creator",
+     tags=['Orders: Customer Role Only'])
 def cancel_order(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -853,7 +861,7 @@ def cancel_order(**kwargs):
 @app.route("/orders/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for getting all existing orders", tags=['Orders'])
+@doc(description="Endpoint for getting all existing orders", tags=['Orders: All Roles'])
 def show_orders(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -868,7 +876,7 @@ def show_orders(**kwargs):
 @app.route("/deliveries/", methods=['POST'])
 @use_kwargs(UserIdSchema())
 @marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
-@doc(description="Endpoint for getting all existing deliveries", tags=['Orders'])
+@doc(description="Endpoint for getting all existing deliveries", tags=['Orders: All Roles'])
 def show_deliveries(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
@@ -943,6 +951,7 @@ docs.register(update_order)
 docs.register(make_delivery)
 docs.register(get_my_deliverer)
 docs.register(get_order_status)
+docs.register(update_order_status)
 docs.register(retrieve_get_code)
 docs.register(match)
 docs.register(unmatch)
