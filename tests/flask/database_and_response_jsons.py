@@ -280,6 +280,16 @@ def success_response_json(succeeded, msg):
     }
 
 
+def update_order_status_response_json(succeeded, msg, earned_DEATS_tokens=None):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "order": {
+            "earned_DEATS_tokens": earned_DEATS_tokens
+        }
+    }
+
+
 def show_users_response_json(registered_users):
     return {
         "registered_users": registered_users

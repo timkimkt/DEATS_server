@@ -620,10 +620,18 @@ def update_order_status(**kwargs):
         msg = "The user's order status has been updated"
         socketio.emit("del:order_status:cus", order_status, to=order_id)
 
+        # Pay the deliverer after they've delivered the order
+        if order_status == "delivered":
+            result = db.users.update_one({"_id": ObjectId(session["user_id"])},
+                                         {"$set": {"DEATS_tokens": order["order_fee"]}})
+            if not result.modified_count:
+                msg = "The order status was updated but something went wrong with paying the deliverer"
+                return json.update_order_status_response_json(True, msg)
+            
     else:
         msg = "The request wasn't successful. No new info was provided"
 
-    return json.success_response_json(bool(succeeded), msg)
+    return json.update_order_status_response_json(bool(succeeded), msg, order["order_fee"])
 
 
 @app.route("/make_del/", methods=['POST'])
