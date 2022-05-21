@@ -21,6 +21,7 @@ from tests.flask.utils.payment import compute_token_fee, compute_new_fee
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
+from tests.flask.expo_notifications import send_push_message
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -302,6 +303,8 @@ def sso_login():
 
         # save user session
         session["user_id"] = user_id
+
+        send_push_message(expo_push_token, "New DEATS message", "You've successfully logged in through Dartmouth SSO")
 
         return json.sso_login_response_json(True,
                                             msg,
