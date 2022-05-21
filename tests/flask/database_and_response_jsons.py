@@ -6,11 +6,12 @@ from datetime import datetime
 FREE_DEATS_TOKENS = 3
 
 
-def create_user_json(user_info, password=None):
+def create_user_json(user_info, expo_push_token, password=None):
     return {
         "acc_active": True,
         "password": password,
         "user_info": user_info,
+        "expo_push_token": expo_push_token,
         "DEATS_tokens": FREE_DEATS_TOKENS,
         "delivery_info": None
     }

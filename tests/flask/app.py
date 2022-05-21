@@ -242,6 +242,8 @@ def reactivate_account(**kwargs):
 @doc(description="Endpoint for creating a new account for or logging a user in through Dartmouth SSO",
      tags=['Account: All Roles'])
 def sso_login():
+    expo_push_token = request.args.get('expoPushToken')
+    print("expo_push_token:", expo_push_token)
     next = request.args.get('next')
     service_ticket = request.args.get("ticket")
 
@@ -289,7 +291,7 @@ def sso_login():
 
             user_info = json.create_user_info_json(net_id_email, username, name)
 
-            result_insert = db.users.insert_one(json.create_user_json(user_info))
+            result_insert = db.users.insert_one(json.create_user_json(user_info, expo_push_token))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
             acc_active = True
