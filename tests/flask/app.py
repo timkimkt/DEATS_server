@@ -627,7 +627,7 @@ def update_order_status(**kwargs):
             if not result.modified_count:
                 msg = "The order status was updated but something went wrong with paying the deliverer"
                 return json.update_order_status_response_json(True, msg)
-            
+
     else:
         msg = "The request wasn't successful. No new info was provided"
 
