@@ -1,4 +1,5 @@
 import redis
+import stripe
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from bson import json_util
@@ -9,7 +10,7 @@ from random_username.generate import generate_username
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session, url_for
+from flask import Flask, request, session, url_for, jsonify
 from flask_socketio import SocketIO, join_room, send, emit
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
@@ -976,6 +977,31 @@ def show_deliveries(**kwargs):
     msg = "Here's a list of deliveries you've made" if len(list(orders.clone())) \
         else "You've not made any deliveries yet"
     return json.show_deliveries_response_json(True, msg, orders)
+
+
+@app.route('/card_payment/', methods=['POST'])
+def card_payment():
+    stripe.api_key = getenv("STRIPE_SECRET_KEY")
+    # Use an existing Customer ID if this is a returning customer
+    customer = stripe.Customer.create()
+    ephemeral_key = stripe.EphemeralKey.create(
+        customer=customer['id'],
+        stripe_version='2020-08-27',
+      )
+
+    payment_intent = stripe.PaymentIntent.create(
+        amount=1099,
+        currency='eur',
+        customer=customer['id'],
+        automatic_payment_methods={
+            'enabled': True
+        }
+    )
+
+    return jsonify(paymentIntent=payment_intent.client_secret,
+                   ephemeralKey=ephemeral_key.secret,
+                   customer=customer.id,
+                   publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
 
 
 @socketio.on('connect')

@@ -20,3 +20,4 @@ blinker
 rollbar
 retry
 exponent_server_sdk
+stripe
