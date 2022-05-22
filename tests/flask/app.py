@@ -535,6 +535,7 @@ def update_order_status(**kwargs):
 
     # Ensure the status update value is permitted
     order_status = kwargs["order"]["order_status"]
+    print(order_status)
     if order_status not in ORDER_STATUS_UPDATE_VALUES and "heading to" not in order_status:
         msg = "The request was aborted. The order status value provided is not permitted"
         return json.success_response_json(False, msg)
@@ -557,7 +558,7 @@ def update_order_status(**kwargs):
         return json.success_response_json(False, msg)
 
     succeeded = db.orders.update_one({"_id": ObjectId(order_id)},
-                                     {"$set": {"order_status": kwargs["order"]["status"]}}).modified_count
+                                     {"$set": {"order_status": order_status}}).modified_count
 
     if succeeded:
         msg = "The user's order status has been updated"
