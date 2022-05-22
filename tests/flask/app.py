@@ -30,6 +30,7 @@ g_count = 0
 
 # Secret key for cryptographically signing session cookies (Value is in bytes)
 app.secret_key = getenv("SECRET_KEY")
+STRIPE_WEBHOOK_SIG = getenv("STRIPE_WEBHOOK_SIG")
 
 "Load configuration"
 SESSION_TYPE = "redis"
@@ -979,7 +980,7 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
-@app.route('/card_payment/', methods=['POST'])
+@app.route("/card_payment/", methods=['POST'])
 def card_payment():
     stripe.api_key = getenv("STRIPE_SECRET_KEY")
     # Use an existing Customer ID if this is a returning customer
@@ -987,14 +988,14 @@ def card_payment():
     ephemeral_key = stripe.EphemeralKey.create(
         customer=customer['id'],
         stripe_version='2020-08-27',
-      )
+    )
 
     payment_intent = stripe.PaymentIntent.create(
-        amount=1099,
-        currency='eur',
+        amount=300,  # cost per DEATS token
+        currency='usd',
         customer=customer['id'],
         automatic_payment_methods={
-            'enabled': True
+            'enabled': True  # use the payment methods configured in the DEATS Stripe Dashboard
         }
     )
 
@@ -1002,6 +1003,52 @@ def card_payment():
                    ephemeralKey=ephemeral_key.secret,
                    customer=customer.id,
                    publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
+
+
+@app.route("/stripe_webhook_updates", methods=['POST'])
+def webhook():
+    data = request.data
+    print(data)
+
+    stripe_signature = request.headers["STRIPE_SIGNATURE"]
+    print("stripe_signature", stripe_signature)
+    print("STRIPE_WEBHOOK_SIG", STRIPE_WEBHOOK_SIG)
+
+    try:
+        event = stripe.Webhook.construct_event(
+            data, stripe_signature, STRIPE_WEBHOOK_SIG
+        )
+    except ValueError as err:
+        # Invalid event data
+        return json.success_response_json(False, str(err))
+
+    except stripe.error.SignatureVerificationError as err:
+        # Invalid signature
+        return json.success_response_json(False, str(err))
+
+    # Event handlers
+    if event['type'] == 'payment_intent.canceled':
+        payment_intent = event['data']['object']
+        print("Canceled payment intent: ", payment_intent)
+
+    elif event['type'] == 'payment_intent.payment_failed':
+        payment_intent = event['data']['object']
+        print(payment_intent)
+
+    elif event['type'] == 'payment_intent.processing':
+        payment_intent = event['data']['object']
+        print("Processing payment intent: ", payment_intent)
+
+    elif event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        print("Succeeded payment intent: ", payment_intent)
+
+    # Other event types
+    else:
+        print('Unhandled event type {}'.format(event['type']))
+
+    msg = "The webhook update was processed successfully"
+    return json.success_response_json(True, msg)
 
 
 @socketio.on('connect')
