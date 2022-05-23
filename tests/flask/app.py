@@ -306,7 +306,7 @@ def sso_login():
         # save user session
         session["user_id"] = user_id
 
-        if expo_push_token:
+        if expo_push_token and expo_push_token != "undefined":
             send_push_message(expo_push_token, "New DEATS message",
                               "You've successfully logged in through Dartmouth SSO")
 
