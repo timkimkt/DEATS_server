@@ -97,6 +97,14 @@ class LocationSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class OrderFeeSchema(Schema):
+    pickup_loc = fields.Nested(LocationSchema(), required=True)
+    drop_loc = fields.Nested(LocationSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class OrderDelInfoSchema(Schema):
     pickup_loc = fields.Nested(LocationSchema(), required=True)
     drop_loc = fields.Nested(LocationSchema(), required=True)
@@ -267,6 +275,15 @@ class DEATSTokensSchema(Schema):
 
 class OrderResponseSchema(Schema):
     order_id = fields.Str(required=True)
+    order_fee = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class OrderFeeResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
     order_fee = fields.Float(required=True)
 
     class Meta:

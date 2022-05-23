@@ -404,6 +404,22 @@ def global_count():
     return json.global_count_response_json(g_count)
 
 
+@app.route("/order_fee/", methods=['POST'])
+@use_kwargs(OrderFeeSchema())
+@marshal_with(OrderFeeResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for asking for the fee for a given order. Doesn't require a login",
+     tags=["Orders: All Roles"])
+def compute_order_fee(**kwargs):
+    num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
+    print("number of unmatched orders", num_unmatched_orders)
+
+    order_fee = compute_token_fee(kwargs["pickup_loc"], kwargs["drop_loc"], num_unmatched_orders)
+    print("order fee:", order_fee)
+
+    msg = "Here's the cost for this order"
+    return json.order_fee_response_json(True, msg, order_fee)
+
+
 @app.route("/order_del/", methods=['POST'])
 @use_kwargs(OrderDelSchema())
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")
