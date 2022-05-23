@@ -17,7 +17,7 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
-from tests.flask.utils.payment import compute_token_fee
+from tests.flask.utils.payment import compute_token_fee, compute_new_fee
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -404,6 +404,22 @@ def global_count():
     return json.global_count_response_json(g_count)
 
 
+@app.route("/order_fee/", methods=['POST'])
+@use_kwargs(OrderFeeSchema())
+@marshal_with(OrderFeeResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for asking for the fee for a given order. Doesn't require a login",
+     tags=["Orders: All Roles"])
+def compute_order_fee(**kwargs):
+    num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
+    print("number of unmatched orders", num_unmatched_orders)
+
+    order_fee = compute_token_fee(kwargs["pickup_loc"], kwargs["drop_loc"], num_unmatched_orders)
+    print("order fee:", order_fee)
+
+    msg = "Here's the cost for this order"
+    return json.order_fee_response_json(True, msg, order_fee)
+
+
 @app.route("/order_del/", methods=['POST'])
 @use_kwargs(OrderDelSchema())
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")
@@ -412,6 +428,7 @@ def order_delivery(**kwargs):
     login_failed = user_is_logged_in()
     if login_failed:
         return login_failed
+
     status_check_failed = acc_is_active()
     if status_check_failed:
         return status_check_failed
@@ -426,13 +443,16 @@ def order_delivery(**kwargs):
 
     # make sure they have enough DEATS tokens to make the order
     num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
-    order_fee = compute_token_fee(pickup_loc["coordinates"], drop_loc["coordinates"], num_unmatched_orders)
+    print("number of unmatched orders", num_unmatched_orders)
+    order_fee = compute_token_fee(pickup_loc, drop_loc, num_unmatched_orders)
+    print("order fee:", order_fee)
 
-    remaining_tokens = customer.pop("DEATS_tokens") - order_fee
+    curr_tokens = customer.pop("DEATS_tokens")
+    remaining_tokens = curr_tokens - order_fee
 
     if remaining_tokens < 0:
-        msg = "You don't have enough tokens to make this request"
-        return json.success_response_json(False, msg)
+        msg = "You don't have enough DEATS tokens to make this request"
+        return json.order_delivery_response_json(False, msg, curr_tokens, order_fee)
 
     # If the customer passed in new user info to be used at the time of creating the order, use that instead
     if kwargs.get("user_info"):
@@ -450,10 +470,21 @@ def order_delivery(**kwargs):
         socketio.emit("cus:new:all", str(order_id))  # announce to all connected clients that a new order's been created
         msg = "The order request has been created successfully"
 
+        # charge the user if the order request is successful
+        result = db.users.update_one({"_id": ObjectId(session["user_id"])},
+                                     {"$set": {"DEATS_tokens": remaining_tokens}})
+
+        if not result.modified_count:
+            msg = "Something went wrong. Try again later"
+            return json.success_response_json(False, msg)
+
     else:
         msg = "The request data looks good but the order wasn't created. Try again"
+        remaining_tokens = curr_tokens
 
-    return json.order_delivery_response_json(bool(order_id), msg, str(order_id))
+    order_id = str(order_id)
+
+    return json.order_delivery_response_json(bool(order_id), msg, remaining_tokens, order_fee, order_id)
 
 
 @app.route("/update_order/", methods=['POST'])
@@ -487,7 +518,35 @@ def update_order(**kwargs):
         msg = "The request was unsuccessful. You're not the deliverer for this order"
         return json.success_response_json(False, msg)
 
+    # Make sure the customer has enough DEATS tokens to do a location update
+    old_pickup_loc = order["pickup_loc"]
+    old_drop_loc = order["drop"]
+    old_order_fee = order["order_fee"]
+
+    # Use the provided pickup or (drop location) if there is one
+    # Doesn't matter if the location update will succeed or not
+    # i.e. if it will succeed, then it is exactly what we want to use in the new fee computation
+    # If not, then that means it is the same as what is already on the order, and we can just use that
+    new_pickup_loc = kwargs["order"]["pickup_loc"] if kwargs.get("order").get("pickup_loc") else old_pickup_loc
+    new_drop_loc = kwargs["order"]["drop_loc"] if kwargs.get("order").get("drop_loc") else old_drop_loc
+
+    new_order_fee = compute_new_fee(new_pickup_loc, new_drop_loc,
+                                    old_pickup_loc, old_drop_loc, old_order_fee)
+    print("new order fee:", new_order_fee)
+
+    customer = db.users.find_one({"_id": ObjectId(session["user_id"])},
+                                 {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
+    print(customer)
+
+    curr_tokens = customer.pop("DEATS_tokens")
+    remaining_tokens = curr_tokens + old_order_fee - new_order_fee
+
+    if remaining_tokens < 0:
+        msg = "You don't have enough DEATS tokens to make this location update"
+        return json.order_delivery_loc_update_response_json(False, msg, curr_tokens, new_order_fee, old_order_fee)
+
     succeeded = 0
+    charge_new_fee = False
     msg = "The order with id, " + order_id + ", doesn't exist"
     updated_payload = {}  # payload to push to the room for the order
     for key, value in kwargs["order"].items():
@@ -499,7 +558,22 @@ def update_order(**kwargs):
                 succeeded = 1
                 updated_payload[key] = value
 
+                # Check for whether a new delivery fee should be charged
+                # requires just one or both to be updated
+                if key == "pickup_loc" or key == "drop_loc":
+                    charge_new_fee = True
+
     if succeeded:
+        if charge_new_fee:
+            db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {"order_fee": new_order_fee}})
+
+        else:
+            # if the order is not charged, the remaining tokens is the same as the curr tokens the user have
+            remaining_tokens = curr_tokens
+
+        msg = "The user's order has been updated"
+
+        # tell the deliverer the updates if there is one
         if order["deliverer"]:
             socketio.emit("cus:update:del", updated_payload, to=order_id)
 
@@ -511,12 +585,11 @@ def update_order(**kwargs):
             if len(updated_payload) > 1 or "GET_code" not in updated_payload:
                 socketio.emit("cus:update:all", order_id)
 
-        msg = "The user's order has been updated"
-
     else:
         "The request wasn't successful. No new info was provided"
 
-    return json.success_response_json(bool(succeeded), msg)
+    return json.order_delivery_loc_update_response_json(bool(succeeded), msg,
+                                                        remaining_tokens, new_order_fee, old_order_fee)
 
 
 @app.route("/update_order_status/", methods=['POST'])
@@ -564,10 +637,18 @@ def update_order_status(**kwargs):
         msg = "The user's order status has been updated"
         socketio.emit("del:order_status:cus", order_status, to=order_id)
 
+        # Pay the deliverer after they've delivered the order
+        if order_status == "delivered":
+            result = db.users.update_one({"_id": ObjectId(session["user_id"])},
+                                         {"$set": {"DEATS_tokens": order["order_fee"]}})
+            if not result.modified_count:
+                msg = "The order status was updated but something went wrong with paying the deliverer"
+                return json.update_order_status_response_json(True, msg)
+            
     else:
         msg = "The request wasn't successful. No new info was provided"
 
-    return json.success_response_json(bool(succeeded), msg)
+    return json.update_order_status_response_json(bool(succeeded), msg, order["order_fee"])
 
 
 @app.route("/make_del/", methods=['POST'])
