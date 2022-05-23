@@ -196,6 +196,14 @@ def login_request_response_json():
     }
 
 
+def order_fee_response_json(succeeded, msg, order_fee):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "order_fee": order_fee
+    }
+
+
 def order_delivery_response_json(succeeded, msg, DEATS_tokens, order_fee, order_id=None):
     return {
         "succeeded": succeeded,
