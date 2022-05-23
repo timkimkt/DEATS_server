@@ -5,14 +5,18 @@ Flask
 # Solution source: https://github.com/benoitc/gunicorn/pull/2581
 https://github.com/benoitc/gunicorn/archive/ff58e0c6da83d5520916bc4cc109a529258d76e1.zip#egg=gunicorn==20.1.0
 
-pymongo[srv]
+pymongo[srv]==4.1.1
 Flask-Session
 python-cas
-redis
-email-validator
+redis==4.3.1
+email-validator==1.2.1
 password_strength
-flask-apispec==0.11.0
+flask-apispec==0.11.1
 flask-socketio
-eventlet
+eventlet==0.33.1
 random-username
 geopy
+blinker
+rollbar
+retry
+exponent_server_sdk

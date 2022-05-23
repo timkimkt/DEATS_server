@@ -21,6 +21,7 @@ from tests.flask.utils.payment import compute_token_fee, compute_new_fee
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
+from tests.flask.expo_notifications import send_push_message
 
 db = MongoClientConnection.get_database()
 app = Flask(__name__)
@@ -242,6 +243,8 @@ def reactivate_account(**kwargs):
 @doc(description="Endpoint for creating a new account for or logging a user in through Dartmouth SSO",
      tags=['Account: All Roles'])
 def sso_login():
+    expo_push_token = request.args.get('expoPushToken')
+    print("expo_push_token:", expo_push_token)
     next = request.args.get('next')
     service_ticket = request.args.get("ticket")
 
@@ -289,7 +292,7 @@ def sso_login():
 
             user_info = json.create_user_info_json(net_id_email, username, name)
 
-            result_insert = db.users.insert_one(json.create_user_json(user_info))
+            result_insert = db.users.insert_one(json.create_user_json(user_info, expo_push_token))
             msg = "You've successfully created an account with DEATS through Dartmouth SSO"
             user_id = str(result_insert.inserted_id)
             acc_active = True
@@ -300,6 +303,8 @@ def sso_login():
 
         # save user session
         session["user_id"] = user_id
+
+        send_push_message(expo_push_token, "New DEATS message", "You've successfully logged in through Dartmouth SSO")
 
         return json.sso_login_response_json(True,
                                             msg,
@@ -644,7 +649,7 @@ def update_order_status(**kwargs):
             if not result.modified_count:
                 msg = "The order status was updated but something went wrong with paying the deliverer"
                 return json.update_order_status_response_json(True, msg)
-            
+
     else:
         msg = "The request wasn't successful. No new info was provided"
 
