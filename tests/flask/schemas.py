@@ -206,6 +206,13 @@ class UnmatchOrderSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class BuyDEATSTokensSchema(Schema):
+    DEATS_tokens = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 # Response schemas
 class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)

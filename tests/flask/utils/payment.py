@@ -6,6 +6,8 @@ COST_PER_DELTA_RADIAL_DISTANCE = 0.25  # in DEATS tokens
 DELTA_SURGE = 2  # Every 2 unmatched orders constitute delivery request surge
 COST_PER_DELTA_SURGE = 0.2
 
+COST_PER_TOKEN = 300  # $3
+
 
 def compute_token_fee(pickup_loc, drop_loc, num_unmatched_orders):
     pickup_tuple = (pickup_loc["coordinates"]["lat"], pickup_loc["coordinates"]["long"])
@@ -43,3 +45,8 @@ def compute_new_fee(new_pickup_loc, new_drop_loc, old_pickup_loc, old_drop_loc, 
     print("distance fee:", old_distance_fee)
 
     return old_fee + new_distance_fee - old_distance_fee
+
+
+def compute_amount(order_fee):
+    return order_fee * COST_PER_TOKEN
+

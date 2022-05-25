@@ -18,7 +18,7 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
-from tests.flask.utils.payment import compute_token_fee, compute_new_fee
+from tests.flask.utils.payment import compute_token_fee, compute_new_fee, compute_amount
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -980,8 +980,14 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
-@app.route("/card_payment/", methods=['POST'])
-def card_payment():
+@app.route("/buy_DEATS_tokens/", methods=['POST'])
+@use_kwargs(BuyDEATSTokensSchema())
+@doc(description="Endpoint for buying DEATS tokens", tags=["Orders: All Roles"])
+def buy_DEATS_tokens(**kwargs):
+    return card_payment(kwargs["DEATS_tokens"])
+
+
+def card_payment(DEATS_tokens):
     stripe.api_key = getenv("STRIPE_SECRET_KEY")
     # Use an existing Customer ID if this is a returning customer
     customer = stripe.Customer.create()
@@ -991,7 +997,7 @@ def card_payment():
     )
 
     payment_intent = stripe.PaymentIntent.create(
-        amount=300,  # cost per DEATS token
+        amount=compute_amount(DEATS_tokens),
         currency='usd',
         customer=customer['id'],
         automatic_payment_methods={
@@ -1003,6 +1009,7 @@ def card_payment():
                    ephemeralKey=ephemeral_key.secret,
                    customer=customer.id,
                    publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
+
 
 
 @app.route("/stripe_webhook_updates", methods=['POST'])
