@@ -1037,7 +1037,8 @@ def create_payment_sheet_details(tokens, order=None):
 
     print("payment: ", result.inserted_id)
 
-    return jsonify(paymentIntent=payment_intent.client_secret,
+    return jsonify(paymentIntentId=payment_intent.id,
+                   paymentIntentClientSecret=payment_intent.client_secret,
                    ephemeralKey=ephemeral_key.secret,
                    customer=customer.id,
                    publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
