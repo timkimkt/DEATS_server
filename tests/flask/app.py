@@ -1158,8 +1158,8 @@ def on_disconnect():
     print("Client disconnected")
 
 
-@socketio.on("join")
-def on_join(data):
+@socketio.on("join_order_room")
+def join_order_room(data):
     print("on join data: ", data)
     print("session: ", session)
 
@@ -1171,13 +1171,30 @@ def on_join(data):
     join_room(order_id)
 
     order = db.orders.find_one({"_id": (ObjectId(order_id))})
-    if order["deliverer"]["user_id"] == user_id:
+    if order.get("deliverer") and order.get("deliverer")["user_id"] == user_id:
         emit("del:match:cus", {"order_id": order_id, "deliverer": order["deliverer"]}, to=order_id)
 
     else:
         send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
 
-    msg = "The user has been successfully added to the room " + order_id
+    msg = "The user has been successfully added to the order room " + order_id
+    return json.success_response_json(True, msg)
+
+
+@socketio.on("join_payment_room")
+def join_payment_room(data):
+    print("on join data: ", data)
+    print("session: ", session)
+
+    # user_id = session["user_id"]
+    user_id = data["user_id"]
+    payment_intent_id = data["payment_intent_id"]
+
+    # add the user to a room based on the order_id passed
+    join_room(payment_intent_id)
+    send("The user " + user_id + " has started a new payment room: " + payment_intent_id, to=payment_intent_id)
+
+    msg = "The user has been successfully added to the payment room " + payment_intent_id
     return json.success_response_json(True, msg)
 
 
