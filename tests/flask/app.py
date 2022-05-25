@@ -496,6 +496,26 @@ def order_delivery(**kwargs):
     return json.order_delivery_response_json(bool(order_id), msg, remaining_tokens, order_fee, order_id)
 
 
+@app.route("/order_del_with_card/", methods=['POST'])
+@use_kwargs(OrderDelSchema())
+@doc(description="Endpoint for ordering a delivery with card payment", tags=["Orders: Customer Role Only"])
+def order_delivery_with_card(**kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
+    print("number of unmatched orders", num_unmatched_orders)
+    order_fee = compute_token_fee(kwargs["order"]["pickup_loc"], kwargs["order"]["drop_loc"], num_unmatched_orders)
+    print("order fee:", order_fee)
+
+    return create_payment_sheet_details(order_fee)
+
+
 @app.route("/update_order/", methods=['POST'])
 @use_kwargs(UpdateOrderSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
@@ -984,10 +1004,10 @@ def show_deliveries(**kwargs):
 @use_kwargs(BuyDEATSTokensSchema())
 @doc(description="Endpoint for buying DEATS tokens", tags=["Orders: All Roles"])
 def buy_DEATS_tokens(**kwargs):
-    return card_payment(kwargs["DEATS_tokens"])
+    return create_payment_sheet_details(kwargs["DEATS_tokens"])
 
 
-def card_payment(DEATS_tokens):
+def create_payment_sheet_details(DEATS_tokens):
     stripe.api_key = getenv("STRIPE_SECRET_KEY")
     # Use an existing Customer ID if this is a returning customer
     customer = stripe.Customer.create()
@@ -1005,11 +1025,12 @@ def card_payment(DEATS_tokens):
         }
     )
 
+    print("payment_intent", payment_intent)
+
     return jsonify(paymentIntent=payment_intent.client_secret,
                    ephemeralKey=ephemeral_key.secret,
                    customer=customer.id,
                    publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
-
 
 
 @app.route("/stripe_webhook_updates", methods=['POST'])
