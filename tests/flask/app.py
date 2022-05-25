@@ -1107,13 +1107,18 @@ def webhook():
 
             if order_id:
                 msg = "The order request has been created successfully"
-
+                order_id = str(order_id)
                 socketio.emit("stripe:order_with_card:cus",
-                              json.order_delivery_response_json(bool(order_id), msg, curr_tokens, pay_tokens, order_id),
+                              json.order_delivery_response_json(
+                                  bool(order_id),
+                                  msg,
+                                  curr_tokens,
+                                  pay_tokens,
+                                  order_id),
                               to=payment_intent.id)  # emit the order details to the initiator of this order
 
                 socketio.emit("cus:new:all",
-                              str(order_id))  # announce to all connected clients that a new order's been created
+                              order_id)  # announce to all connected clients that a new order's been created
 
             else:
                 msg = "The request data looks good but the order wasn't created. Try again"
