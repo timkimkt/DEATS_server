@@ -1,4 +1,5 @@
 import redis
+import stripe
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from bson import json_util
@@ -9,7 +10,7 @@ from random_username.generate import generate_username
 
 from bson.objectid import ObjectId
 from datetime import timedelta
-from flask import Flask, request, session, url_for
+from flask import Flask, request, session, url_for, jsonify
 from flask_socketio import SocketIO, join_room, send, emit
 from flask_session import Session
 from logic.customer_finder import CustomerFinder
@@ -17,7 +18,7 @@ from tests.flask.helper_functions import validate_password
 from tests.flask.mongo_client_connection import MongoClientConnection
 from tests.flask.utils.Constants import ORDER_STATUS_UPDATE_VALUES
 from tests.flask.utils.common_functions import user_is_logged_in, acc_is_active
-from tests.flask.utils.payment import compute_token_fee, compute_new_fee
+from tests.flask.utils.payment import compute_token_fee, compute_new_fee, compute_amount
 from tests.flask.validate_email import validate_email
 from flask_apispec import FlaskApiSpec, doc, marshal_with, use_kwargs
 from tests.flask.schemas import *
@@ -29,6 +30,7 @@ g_count = 0
 
 # Secret key for cryptographically signing session cookies (Value is in bytes)
 app.secret_key = getenv("SECRET_KEY")
+STRIPE_WEBHOOK_SIG = getenv("STRIPE_WEBHOOK_SIG")
 
 "Load configuration"
 SESSION_TYPE = "redis"
@@ -304,7 +306,7 @@ def sso_login():
         # save user session
         session["user_id"] = user_id
 
-        if expo_push_token:
+        if expo_push_token and expo_push_token != "undefined":
             send_push_message(expo_push_token, "New DEATS message",
                               "You've successfully logged in through Dartmouth SSO")
 
@@ -494,6 +496,29 @@ def order_delivery(**kwargs):
     return json.order_delivery_response_json(bool(order_id), msg, remaining_tokens, order_fee, order_id)
 
 
+@app.route("/order_del_with_card/", methods=['POST'])
+@use_kwargs(OrderDelSchema())
+@doc(description="Endpoint for ordering a delivery with card payment", tags=["Orders: Customer Role Only"])
+def order_delivery_with_card(**kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
+    print("number of unmatched orders", num_unmatched_orders)
+
+    order = kwargs["order"]
+    order_fee = compute_token_fee(order["pickup_loc"], order["drop_loc"], num_unmatched_orders)
+    print("order fee:", order_fee)
+
+    return create_payment_sheet_details(
+        order_fee, json.create_payment_details_order_json(order, kwargs.get("user_info")))
+
+
 @app.route("/update_order/", methods=['POST'])
 @use_kwargs(UpdateOrderSchema())
 @marshal_with(SuccessResponseSchema, code=200, description="Response json")
@@ -601,7 +626,7 @@ def update_order(**kwargs):
 
 @app.route("/update_order_status/", methods=['POST'])
 @use_kwargs(UpdateOrderStatusSchema())
-@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@marshal_with(UpdateOrderStatusResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating the order status of an existing order. To be called only by deliverers",
      tags=['Orders: Deliverer Role Only'])
 def update_order_status(**kwargs):
@@ -640,6 +665,7 @@ def update_order_status(**kwargs):
     succeeded = db.orders.update_one({"_id": ObjectId(order_id)},
                                      {"$set": {"order_status": order_status}}).modified_count
 
+    result = None
     if succeeded:
         msg = "The user's order status has been updated"
         socketio.emit("del:order_status:cus", order_status, to=order_id)
@@ -647,15 +673,18 @@ def update_order_status(**kwargs):
         # Pay the deliverer after they've delivered the order
         if order_status == "delivered":
             result = db.users.update_one({"_id": ObjectId(session["user_id"])},
-                                         {"$set": {"DEATS_tokens": order["order_fee"]}})
+                                         {"$inc": {"DEATS_tokens": order["order_fee"]}})
             if not result.modified_count:
                 msg = "The order status was updated but something went wrong with paying the deliverer"
                 return json.update_order_status_response_json(True, msg)
 
+            result = db.users.find_one({"_id": ObjectId(session["user_id"])},
+                                       {"DEATS_tokens": 1, "_id": 0})["DEATS_tokens"]
+
     else:
         msg = "The request wasn't successful. No new info was provided"
 
-    return json.update_order_status_response_json(bool(succeeded), msg, order["order_fee"])
+    return json.update_order_status_response_json(bool(succeeded), msg, result)
 
 
 @app.route("/make_del/", methods=['POST'])
@@ -978,6 +1007,156 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
+@app.route("/buy_DEATS_tokens/", methods=['POST'])
+@use_kwargs(BuyDEATSTokensSchema())
+@doc(description="Endpoint for buying DEATS tokens", tags=["Orders: All Roles"])
+def buy_DEATS_tokens(**kwargs):
+    return create_payment_sheet_details(kwargs["DEATS_tokens"])
+
+
+def create_payment_sheet_details(tokens, order=None):
+    stripe.api_key = getenv("STRIPE_SECRET_KEY")
+    # Use an existing Customer ID if this is a returning customer
+    customer = stripe.Customer.create()
+    ephemeral_key = stripe.EphemeralKey.create(
+        customer=customer['id'],
+        stripe_version='2020-08-27',
+    )
+
+    amount = compute_amount(tokens)
+    print("amount", amount)
+    payment_intent = stripe.PaymentIntent.create(
+        amount=int(amount),
+        currency='usd',
+        customer=customer['id'],
+        automatic_payment_methods={
+            'enabled': True  # use the payment methods configured in the DEATS Stripe Dashboard
+        }
+    )
+
+    print("created payment_intent: ", payment_intent.id, payment_intent)
+
+    result = db.payments.insert_one(
+        json.create_payment_json(payment_intent.id, session["user_id"], tokens, order))
+
+    print("payment: ", result.inserted_id)
+
+    return jsonify(paymentIntentId=payment_intent.id,
+                   paymentIntentClientSecret=payment_intent.client_secret,
+                   ephemeralKey=ephemeral_key.secret,
+                   customer=customer.id,
+                   publishableKey=getenv("STRIPE_PUBLISHABLE_KEY"))
+
+
+@app.route("/stripe_webhook_updates", methods=['POST'])
+def stripe_webhook_updates():
+    data = request.data
+    print(data)
+
+    stripe_signature = request.headers["STRIPE_SIGNATURE"]
+    print("stripe_signature", stripe_signature)
+    print("STRIPE_WEBHOOK_SIG", STRIPE_WEBHOOK_SIG)
+
+    try:
+        event = stripe.Webhook.construct_event(
+            data, stripe_signature, STRIPE_WEBHOOK_SIG
+        )
+    except ValueError as err:
+        # Invalid event data
+        return json.success_response_json(False, str(err))
+
+    except stripe.error.SignatureVerificationError as err:
+        # Invalid signature
+        return json.success_response_json(False, str(err))
+
+    # Event handlers
+    if event['type'] == 'payment_intent.canceled':
+        payment_intent = event['data']['object']
+        print("Canceled payment intent: ", payment_intent)
+
+    elif event['type'] == 'payment_intent.payment_failed':
+        payment_intent = event['data']['object']
+        print(payment_intent)
+
+    elif event['type'] == 'payment_intent.processing':
+        payment_intent = event['data']['object']
+        print("Processing payment intent: ", payment_intent)
+
+    elif event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        print("Succeeded payment intent: ", payment_intent)
+
+        payment = db.payments.find_one({"_id": payment_intent.id})
+        pay_tokens = payment["tokens"]
+
+        # Get the customer info from the db
+        customer = db.users.find_one({"_id": ObjectId(payment["user_id"])},
+                                     {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
+
+        curr_tokens = customer.pop("DEATS_tokens")
+
+        order = payment["pay_order"]
+        if order:
+            # If the customer passed in new user info to be used at the time of creating the order, use that instead
+            if order.get("user_info"):
+                for key, value in order["user_info"].items():
+                    customer["user_info"][f"{key}"] = value
+
+            customer["user_id"] = payment["user_id"]
+
+            order_id = db.orders.insert_one(
+                json.order_delivery_json(customer,
+                                         order["order"]["pickup_loc"], order["order"]["drop_loc"],
+                                         order["order"]["GET_code"], pay_tokens)).inserted_id
+
+            if order_id:
+                msg = "The order request has been created successfully"
+                order_id = str(order_id)
+                socketio.emit("stripe:order_with_card:cus",
+                              json.order_delivery_response_json(
+                                  bool(order_id),
+                                  msg,
+                                  curr_tokens,
+                                  pay_tokens,
+                                  order_id),
+                              to=payment_intent.id)  # emit the order details to the initiator of this order
+
+                socketio.emit("cus:new:all",
+                              order_id)  # announce to all connected clients that a new order's been created
+
+            else:
+                msg = "The request data looks good but the order wasn't created. Try again"
+
+            order_id = str(order_id)
+
+            return json.order_delivery_response_json(bool(order_id), msg, None, pay_tokens, order_id)
+
+        else:
+            succeeded = True
+            msg = "Your DEATS_tokens has been updated"
+            rem_tokens = curr_tokens + pay_tokens
+
+            result = db.users.update_one({"_id": ObjectId(payment["user_id"])},
+                                         {"$inc": {"DEATS_tokens": pay_tokens}})
+            if not result.modified_count:
+                succeeded = False
+                msg = "The request went through but something went wrong with updating the user's DEATS tokens"
+                rem_tokens = None
+
+            socketio.emit("stripe:buy_tokens:cus",
+                          json.buy_DEATS_tokens_response_json(succeeded, msg, rem_tokens),
+                          to=payment_intent.id)  # emit the order details to the initiator of this order
+
+            return json.buy_DEATS_tokens_response_json(succeeded, msg)
+
+    # Other event types
+    else:
+        print('Unhandled event type {}'.format(event['type']))
+
+    msg = "The webhook update was processed successfully"
+    return json.success_response_json(True, msg)
+
+
 @socketio.on('connect')
 def on_connect():
     print("New connection")
@@ -988,8 +1167,8 @@ def on_disconnect():
     print("Client disconnected")
 
 
-@socketio.on("join")
-def on_join(data):
+@socketio.on("join_order_room")
+def join_order_room(data):
     print("on join data: ", data)
     print("session: ", session)
 
@@ -1001,13 +1180,30 @@ def on_join(data):
     join_room(order_id)
 
     order = db.orders.find_one({"_id": (ObjectId(order_id))})
-    if order["deliverer"]["user_id"] == user_id:
+    if order.get("deliverer") and order.get("deliverer")["user_id"] == user_id:
         emit("del:match:cus", {"order_id": order_id, "deliverer": order["deliverer"]}, to=order_id)
 
     else:
         send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
 
-    msg = "The user has been successfully added to the room " + order_id
+    msg = "The user has been successfully added to the order room " + order_id
+    return json.success_response_json(True, msg)
+
+
+@socketio.on("join_payment_room")
+def join_payment_room(data):
+    print("on join data: ", data)
+    print("session: ", session)
+
+    # user_id = session["user_id"]
+    user_id = data["user_id"]
+    payment_intent_id = data["payment_intent_id"]
+
+    # add the user to a room based on the order_id passed
+    join_room(payment_intent_id)
+    send("The user " + user_id + " has started a new payment room: " + payment_intent_id, to=payment_intent_id)
+
+    msg = "The user has been successfully added to the payment room " + payment_intent_id
     return json.success_response_json(True, msg)
 
 

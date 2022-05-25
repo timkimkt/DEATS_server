@@ -17,6 +17,15 @@ def create_user_json(user_info, expo_push_token, password=None):
     }
 
 
+def create_payment_json(payment_intent_id, user_id, tokens, order):
+    return {
+        "_id": payment_intent_id,
+        "user_id": user_id,
+        "tokens": tokens,
+        "pay_order": order,
+    }
+
+
 def create_user_info_json(email, username, name=None, phone_num=None):
     return {
         "email": email,
@@ -39,6 +48,13 @@ def order_delivery_json(customer, pickup_loc, drop_loc, get_code, order_fee):
         "order_date": datetime.fromtimestamp(time.time()),
         "order_status": "pending",
         "order_fee": order_fee
+    }
+
+
+def create_payment_details_order_json(order, user_info):
+    return {
+        "order": order,
+        "user_info": user_info
     }
 
 
@@ -289,12 +305,22 @@ def success_response_json(succeeded, msg):
     }
 
 
-def update_order_status_response_json(succeeded, msg, earned_DEATS_tokens=None):
+def update_order_status_response_json(succeeded, msg, DEATS_tokens=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "order": {
-            "earned_DEATS_tokens": earned_DEATS_tokens
+        "user": {
+            "DEATS_tokens": DEATS_tokens
+        }
+    }
+
+
+def buy_DEATS_tokens_response_json(succeeded, msg, DEATS_tokens=None):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        "user": {
+            "DEATS_tokens": DEATS_tokens
         }
     }
 

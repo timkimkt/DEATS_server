@@ -206,6 +206,13 @@ class UnmatchOrderSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class BuyDEATSTokensSchema(Schema):
+    DEATS_tokens = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 # Response schemas
 class UserInfoResponseSchema(Schema):
     email = fields.Str(required=True)
@@ -320,7 +327,7 @@ class GetDelivererResponseSchema(Schema):
 
 
 class OrderStatusSchema(Schema):
-    order_status = fields.Str(required=True)
+    DEATS_tokens = fields.Float(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -330,6 +337,15 @@ class GetOrderStatusResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
     order = fields.Nested(OrderStatusSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class UpdateOrderStatusResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    user = fields.Nested(OrderStatusSchema(), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
