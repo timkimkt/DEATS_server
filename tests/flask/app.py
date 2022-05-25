@@ -510,10 +510,13 @@ def order_delivery_with_card(**kwargs):
 
     num_unmatched_orders = len(list(db.orders.find(json.find_order_json())))  # find all unmatched orders
     print("number of unmatched orders", num_unmatched_orders)
-    order_fee = compute_token_fee(kwargs["order"]["pickup_loc"], kwargs["order"]["drop_loc"], num_unmatched_orders)
+
+    order = kwargs["order"]
+    order_fee = compute_token_fee(order["pickup_loc"], order["drop_loc"], num_unmatched_orders)
     print("order fee:", order_fee)
 
-    return create_payment_sheet_details(order_fee)
+    return create_payment_sheet_details(
+        order_fee, json.create_payment_details_order_json(order, kwargs.get("user_info")))
 
 
 @app.route("/update_order/", methods=['POST'])
@@ -1007,7 +1010,7 @@ def buy_DEATS_tokens(**kwargs):
     return create_payment_sheet_details(kwargs["DEATS_tokens"])
 
 
-def create_payment_sheet_details(DEATS_tokens, order=None):
+def create_payment_sheet_details(tokens, order=None):
     stripe.api_key = getenv("STRIPE_SECRET_KEY")
     # Use an existing Customer ID if this is a returning customer
     customer = stripe.Customer.create()
@@ -1016,7 +1019,7 @@ def create_payment_sheet_details(DEATS_tokens, order=None):
         stripe_version='2020-08-27',
     )
 
-    amount = compute_amount(DEATS_tokens)
+    amount = compute_amount(tokens)
     print("amount", amount)
     payment_intent = stripe.PaymentIntent.create(
         amount=int(amount),
@@ -1029,8 +1032,8 @@ def create_payment_sheet_details(DEATS_tokens, order=None):
 
     print("created payment_intent: ", payment_intent.id, payment_intent)
 
-    result = db.payment.insert_one(
-        json.create_payment_json(payment_intent.id, session["user_id"], order))
+    result = db.payments.insert_one(
+        json.create_payment_json(payment_intent.id, session["user_id"], tokens, order))
 
     print("payment: ", result.inserted_id)
 
@@ -1077,6 +1080,64 @@ def webhook():
     elif event['type'] == 'payment_intent.succeeded':
         payment_intent = event['data']['object']
         print("Succeeded payment intent: ", payment_intent)
+
+        payment = db.payments.find_one({"_id": payment_intent.id})
+        pay_tokens = payment["tokens"]
+
+        # Get the customer info from the db
+        customer = db.users.find_one({"_id": ObjectId(payment["user_id"])},
+                                     {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
+
+        curr_tokens = customer.pop("DEATS_tokens")
+
+        order = payment["pay_order"]
+        if order:
+            # If the customer passed in new user info to be used at the time of creating the order, use that instead
+            if order.get("user_info"):
+                for key, value in order["user_info"].items():
+                    customer["user_info"][f"{key}"] = value
+
+            customer["user_id"] = payment["user_id"]
+
+            order_id = db.orders.insert_one(
+                json.order_delivery_json(customer,
+                                         order["order"]["pickup_loc"], order["order"]["drop_loc"],
+                                         order["order"]["GET_code"], pay_tokens)).inserted_id
+
+            if order_id:
+                msg = "The order request has been created successfully"
+
+                socketio.emit("stripe:order_with_card:cus",
+                              json.order_delivery_response_json(bool(order_id), msg, curr_tokens, pay_tokens, order_id),
+                              to=payment_intent.id)  # emit the order details to the initiator of this order
+
+                socketio.emit("cus:new:all",
+                              str(order_id))  # announce to all connected clients that a new order's been created
+
+            else:
+                msg = "The request data looks good but the order wasn't created. Try again"
+
+            order_id = str(order_id)
+
+            return json.order_delivery_response_json(bool(order_id), msg, None, pay_tokens, order_id)
+
+        else:
+            succeeded = True
+            msg = "Your DEATS_tokens has been updated"
+            rem_tokens = curr_tokens + pay_tokens
+
+            result = db.users.update_one({"_id": ObjectId(payment["user_id"])},
+                                         {"$inc": {"DEATS_tokens": pay_tokens}})
+            if not result.modified_count:
+                succeeded = False
+                msg = "The request went through but something went wrong with updating the user's DEATS tokens"
+                rem_tokens = None
+
+            socketio.emit("stripe:buy_tokens:cus",
+                          json.buy_DEATS_tokens_response_json(succeeded, msg, rem_tokens),
+                          to=payment_intent.id)  # emit the order details to the initiator of this order
+
+            return json.buy_DEATS_tokens_response_json(succeeded, msg)
 
     # Other event types
     else:
