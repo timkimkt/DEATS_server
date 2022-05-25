@@ -678,12 +678,13 @@ def update_order_status(**kwargs):
                 msg = "The order status was updated but something went wrong with paying the deliverer"
                 return json.update_order_status_response_json(True, msg)
 
-            result = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"DEATS_tokens": 1, "_id": 0})
+            result = db.users.find_one({"_id": ObjectId(session["user_id"])},
+                                       {"DEATS_tokens": 1, "_id": 0})["DEATS_tokens"]
 
     else:
         msg = "The request wasn't successful. No new info was provided"
 
-    return json.update_order_status_response_json(bool(succeeded), msg, result["DEATS_tokens"])
+    return json.update_order_status_response_json(bool(succeeded), msg, result)
 
 
 @app.route("/make_del/", methods=['POST'])
