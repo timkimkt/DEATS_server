@@ -17,6 +17,14 @@ def create_user_json(user_info, expo_push_token, password=None):
     }
 
 
+def create_payment_json(payment_intent_id, user_id, order):
+    return {
+        "_id": payment_intent_id,
+        "user_id": user_id,
+        "order": order,
+    }
+
+
 def create_user_info_json(email, username, name=None, phone_num=None):
     return {
         "email": email,

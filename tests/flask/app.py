@@ -1007,7 +1007,7 @@ def buy_DEATS_tokens(**kwargs):
     return create_payment_sheet_details(kwargs["DEATS_tokens"])
 
 
-def create_payment_sheet_details(DEATS_tokens):
+def create_payment_sheet_details(DEATS_tokens, order=None):
     stripe.api_key = getenv("STRIPE_SECRET_KEY")
     # Use an existing Customer ID if this is a returning customer
     customer = stripe.Customer.create()
@@ -1027,7 +1027,12 @@ def create_payment_sheet_details(DEATS_tokens):
         }
     )
 
-    print("payment_intent", payment_intent)
+    print("created payment_intent: ", payment_intent.id, payment_intent)
+
+    result = db.payment.insert_one(
+        json.create_payment_json(payment_intent.id, session["user_id"], order))
+
+    print("payment: ", result.inserted_id)
 
     return jsonify(paymentIntent=payment_intent.client_secret,
                    ephemeralKey=ephemeral_key.secret,
