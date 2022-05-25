@@ -1016,8 +1016,10 @@ def create_payment_sheet_details(DEATS_tokens):
         stripe_version='2020-08-27',
     )
 
+    amount = compute_amount(DEATS_tokens)
+    print("amount", amount)
     payment_intent = stripe.PaymentIntent.create(
-        amount=compute_amount(DEATS_tokens),
+        amount=int(amount),
         currency='usd',
         customer=customer['id'],
         automatic_payment_methods={
