@@ -305,12 +305,12 @@ def success_response_json(succeeded, msg):
     }
 
 
-def update_order_status_response_json(succeeded, msg, earned_DEATS_tokens=None):
+def update_order_status_response_json(succeeded, msg, DEATS_tokens=None):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "order": {
-            "earned_DEATS_tokens": earned_DEATS_tokens
+        "user": {
+            "DEATS_tokens": DEATS_tokens
         }
     }
 

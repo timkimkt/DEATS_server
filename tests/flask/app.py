@@ -626,7 +626,7 @@ def update_order(**kwargs):
 
 @app.route("/update_order_status/", methods=['POST'])
 @use_kwargs(UpdateOrderStatusSchema())
-@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@marshal_with(UpdateOrderStatusResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating the order status of an existing order. To be called only by deliverers",
      tags=['Orders: Deliverer Role Only'])
 def update_order_status(**kwargs):
@@ -665,6 +665,7 @@ def update_order_status(**kwargs):
     succeeded = db.orders.update_one({"_id": ObjectId(order_id)},
                                      {"$set": {"order_status": order_status}}).modified_count
 
+    result = None
     if succeeded:
         msg = "The user's order status has been updated"
         socketio.emit("del:order_status:cus", order_status, to=order_id)
@@ -672,15 +673,17 @@ def update_order_status(**kwargs):
         # Pay the deliverer after they've delivered the order
         if order_status == "delivered":
             result = db.users.update_one({"_id": ObjectId(session["user_id"])},
-                                         {"$set": {"DEATS_tokens": order["order_fee"]}})
+                                         {"$inc": {"DEATS_tokens": order["order_fee"]}})
             if not result.modified_count:
                 msg = "The order status was updated but something went wrong with paying the deliverer"
                 return json.update_order_status_response_json(True, msg)
 
+            result = db.users.find_one({"_id": ObjectId(session["user_id"])}, {"DEATS_tokens": 1, "_id": 0})
+
     else:
         msg = "The request wasn't successful. No new info was provided"
 
-    return json.update_order_status_response_json(bool(succeeded), msg, order["order_fee"])
+    return json.update_order_status_response_json(bool(succeeded), msg, result["DEATS_tokens"])
 
 
 @app.route("/make_del/", methods=['POST'])
@@ -1045,7 +1048,7 @@ def create_payment_sheet_details(tokens, order=None):
 
 
 @app.route("/stripe_webhook_updates", methods=['POST'])
-def webhook():
+def stripe_webhook_updates():
     data = request.data
     print(data)
 
