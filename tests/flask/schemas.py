@@ -408,6 +408,78 @@ class GetDeliveriesResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class AllOrdersResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    all_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class ActiveOrdersResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    active_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class PastOrdersResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    past_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class CanceledOrdersResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    canceled_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class AllDeliveriesResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    all_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class ActiveDeliveriesResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    active_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class PastDeliveriesResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    past_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class CanceledDeliveriesResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    canceled_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class SuccessResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)

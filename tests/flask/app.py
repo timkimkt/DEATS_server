@@ -1009,7 +1009,7 @@ def show_deliveries(**kwargs):
 
 @app.route("/all_orders/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
+@marshal_with(AllOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing orders", tags=['Orders: All Roles'])
 def all_orders(**kwargs):
     return fetch_orders(
@@ -1020,7 +1020,7 @@ def all_orders(**kwargs):
 
 @app.route("/active_orders/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(ActiveOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all active orders", tags=['Orders: All Roles'])
 def active_orders(**kwargs):
     return fetch_orders(
@@ -1031,7 +1031,7 @@ def active_orders(**kwargs):
 
 @app.route("/past_orders/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(PastOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all past orders", tags=['Orders: All Roles'])
 def past_orders(**kwargs):
     return fetch_orders(
@@ -1042,7 +1042,7 @@ def past_orders(**kwargs):
 
 @app.route("/canceled_orders/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(CanceledOrdersResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting canceled orders", tags=['Orders: All Roles'])
 def canceled_orders(**kwargs):
     return fetch_orders(
@@ -1053,7 +1053,7 @@ def canceled_orders(**kwargs):
 
 @app.route("/all_deliveries/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
+@marshal_with(AllDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all existing deliveries", tags=['Orders: All Roles'])
 def all_deliveries(**kwargs):
     return fetch_orders(
@@ -1064,7 +1064,7 @@ def all_deliveries(**kwargs):
 
 @app.route("/active_deliveries/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(ActiveDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all active deliveries", tags=['Orders: All Roles'])
 def active_deliveries(**kwargs):
     return fetch_orders(
@@ -1075,7 +1075,7 @@ def active_deliveries(**kwargs):
 
 @app.route("/past_deliveries/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(PastDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all past deliveries", tags=['Orders: All Roles'])
 def past_deliveries(**kwargs):
     return fetch_orders(
@@ -1086,7 +1086,7 @@ def past_deliveries(**kwargs):
 
 @app.route("/canceled_deliveries/", methods=['POST'])
 @use_kwargs(UserIdSchema())
-@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@marshal_with(CanceledDeliveriesResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for getting all canceled deliveries", tags=['Orders: All Roles'])
 def canceled_deliveries(**kwargs):
     return fetch_orders(
