@@ -123,6 +123,20 @@ def show_deliveries_input_json(user_id):
     }
 
 
+def fetch_orders_input_json(user_id, role, order_status=None):
+    if order_status:
+        return {
+            "$and": [
+                {f"{role}.user_id": user_id},
+                {"order_status": order_status}
+            ]
+        }
+
+    return {
+        f"{role}.user_id": user_id
+    }
+
+
 def show_orders_response_json(succeeded, msg, orders):
     return {
         "succeeded": succeeded,
