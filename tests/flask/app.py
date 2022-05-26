@@ -1007,6 +1007,35 @@ def show_deliveries(**kwargs):
     return json.show_deliveries_response_json(True, msg, orders)
 
 
+@app.route("/all_orders/", methods=['POST'])
+@use_kwargs(UserIdSchema())
+@marshal_with(GetOrdersResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting all existing orders", tags=['Orders: All Roles'])
+def show_all_orders(**kwargs):
+    return fetch_orders(json.show_orders_input_json(session["user_id"]), "all", "orders")
+
+
+@app.route("/all_deliveries/", methods=['POST'])
+@use_kwargs(UserIdSchema())
+@marshal_with(GetDeliveriesResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for getting all existing deliveries", tags=['Orders: All Roles'])
+def show_all_deliveries(**kwargs):
+    return fetch_orders(json.show_orders_input_json(session["user_id"]), "all", "deliveries")
+
+
+def fetch_orders(filter_json, result_modifier, result_type):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    result = db.orders.find(filter_json)
+
+    msg = f"Here's the list of {result_modifier} {result_type} you've made" if len(list(result.clone())) \
+        else f"There are no {result_modifier} {result_type} in your account"
+
+    return json.fetch_orders_response_json(True, msg, result, result_modifier, result_type)
+
+
 @app.route("/buy_DEATS_tokens/", methods=['POST'])
 @use_kwargs(BuyDEATSTokensSchema())
 @doc(description="Endpoint for buying DEATS tokens", tags=["Orders: All Roles"])

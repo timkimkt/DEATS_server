@@ -139,6 +139,14 @@ def show_deliveries_response_json(succeeded, msg, deliveries):
     }
 
 
+def fetch_orders_response_json(succeeded, msg, result, result_modifier, result_type):
+    return {
+        "succeeded": succeeded,
+        "msg": msg,
+        f"{result_modifier}_{result_type}": result
+    }
+
+
 def match_unmatch_customer_json(deliverer=None, order_status="matched"):
     return {
         "deliverer": deliverer,
