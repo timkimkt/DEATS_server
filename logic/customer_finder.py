@@ -34,8 +34,15 @@ class CustomerFinder:
                 order_json["pickup_loc"]["coordinates"], order_json["drop_loc"]["coordinates"])
             print("score: ", score)
             print("customer: ", str(order_json["customer"]))
-            heapq.heappush(self.queue, Customer(order_json["customer"], str(order_json["_id"]),
-                                                order_json["pickup_loc"], order_json["drop_loc"], score))
+            heapq.heappush(
+                self.queue,
+                Customer(
+                    order_json["customer"],
+                    str(order_json["_id"]),
+                    order_json["pickup_loc"],
+                    order_json["drop_loc"],
+                    order_json["order_fee"],
+                    score))
 
     def get_k_least_score_customers(self, k):
         least_scored_customers = []
@@ -49,7 +56,7 @@ class CustomerFinder:
             # Might take them out in the future if they cause privacy issues
             print("this customer", customer.customer)
             order_json = database_and_response_jsons.order_json(
-                customer.order_id, customer.pickup_loc, customer.drop_loc)
+                customer.order_id, customer.pickup_loc, customer.drop_loc, customer.order_fee)
 
             customer_and_order_json = database_and_response_jsons.customer_and_order_json(
                 customer.customer, order_json["order"])

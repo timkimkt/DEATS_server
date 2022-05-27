@@ -271,12 +271,13 @@ def order_delivery_loc_update_response_json(succeeded, msg, DEATS_tokens, new_or
     }
 
 
-def order_json(order_id, pickup_loc, drop_loc):
+def order_json(order_id, pickup_loc, drop_loc, order_fee):
     return {
         "order": {
             "order_id": order_id,
             "pickup_loc": pickup_loc,
-            "drop_loc": drop_loc
+            "drop_loc": drop_loc,
+            "order_fee": order_fee
         }
     }
 
