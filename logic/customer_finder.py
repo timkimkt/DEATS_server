@@ -1,4 +1,5 @@
 from bson.objectid import ObjectId
+from geopy.distance import geodesic
 
 from logic.customer import Customer
 from logic.deliverer import Deliverer
@@ -12,7 +13,11 @@ db = MongoClientConnection.get_database()
 
 
 def compute_distance(loc1, loc2):
-    return sqrt((loc2['lat'] - loc1['lat']) ** 2 + (loc2['long'] - loc1['long']) ** 2)
+    loc1_tuple = (loc1["lat"], loc1["long"])
+    loc2_tuple = (loc2["lat"], loc2["long"])
+    distance = geodesic(loc1_tuple, loc2_tuple).miles
+    print("distance: ", distance, loc1, loc2)
+    return distance
 
 
 class CustomerFinder:
