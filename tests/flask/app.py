@@ -535,7 +535,7 @@ def update_order(**kwargs):
 
     # Ensure the order exists
     order_id = kwargs["order"]["order_id"]
-    order = db.orders.find_one({"_id": (ObjectId(order_id))})
+    order = db.orders.find_one({"_id": ObjectId(order_id)})
     if not order:
         msg = "The order with id, " + order_id + ", doesn't exist"
         return json.success_response_json(False, msg)
@@ -579,7 +579,6 @@ def update_order(**kwargs):
 
     succeeded = 0
     charge_new_fee = False
-    msg = "The order with id, " + order_id + ", doesn't exist"
     updated_payload = {}  # payload to push to the room for the order
     for key, value in kwargs["order"].items():
         if key != "order_id":
@@ -596,14 +595,14 @@ def update_order(**kwargs):
                     charge_new_fee = True
 
     if succeeded:
+        msg = "The user's order has been updated"
+
         if charge_new_fee:
             db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {"order_fee": new_order_fee}})
 
         else:
             # if the order is not charged, the remaining tokens is the same as the curr tokens the user have
             remaining_tokens = curr_tokens
-
-        msg = "The user's order has been updated"
 
         # tell the deliverer the updates if there is one
         if order["deliverer"]:
@@ -618,7 +617,7 @@ def update_order(**kwargs):
                 socketio.emit("cus:update:all", order_id)
 
     else:
-        "The request wasn't successful. No new info was provided"
+        msg = "The request wasn't successful. No new info was provided"
 
     return json.order_delivery_loc_update_response_json(bool(succeeded), msg,
                                                         remaining_tokens, new_order_fee, old_order_fee)
