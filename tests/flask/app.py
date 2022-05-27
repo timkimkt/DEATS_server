@@ -552,7 +552,7 @@ def update_order(**kwargs):
 
     # Make sure the customer has enough DEATS tokens to do a location update
     old_pickup_loc = order["pickup_loc"]
-    old_drop_loc = order["drop"]
+    old_drop_loc = order["drop_loc"]
     old_order_fee = order["order_fee"]
 
     # Use the provided pickup or (drop location) if there is one
