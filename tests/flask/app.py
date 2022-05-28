@@ -269,9 +269,10 @@ def sso_login():
     net_id_email = attributes.get("netid") + "@dartmouth.edu"
 
     if user:
-        result_find = db.users.find_one({"user_info": {"email": net_id_email}})
+        result_find = db.users.find_one({"user_info.email": net_id_email})
 
         if result_find:
+            print("This user is already in the system. Fetching details...")
             msg = "You've logged into DEATS successfully through Dartmouth SSO"
             print(result_find)
             user_id = str(result_find["_id"])
@@ -284,6 +285,7 @@ def sso_login():
             session["acc_active"] = result_find.get("acc_active")
 
         else:
+            print("This user is not in the system. Creating a new account for them...")
             name = attributes.get("name")
 
             # generate a random username for the user that's not already in the db
