@@ -376,15 +376,16 @@ class MatchResponseSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
-class OrdersResponse(Schema):
+class OrdersResponseSchema(Schema):
     _id = fields.Str(required=True)
     customer = fields.Nested(UserResponseSchema(), required=True)
     deliverer = fields.Nested(UserResponseSchema(), required=True)
     pickup_loc = fields.Nested(LocationSchema(), required=True)
     drop_loc = fields.Nested(LocationSchema(), required=True)
     GET_code = fields.Str(required=True)
-    order_date = fields.DateTime(required=True)
+    order_fee = fields.Float(required=True)
     order_status = fields.Str(required=True)
+    order_date = fields.DateTime(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -393,7 +394,7 @@ class OrdersResponse(Schema):
 class GetOrdersResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+    orders = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -402,7 +403,7 @@ class GetOrdersResponseSchema(Schema):
 class GetDeliveriesResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+    deliveries = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -411,7 +412,7 @@ class GetDeliveriesResponseSchema(Schema):
 class AllOrdersResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    all_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+    all_orders = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -420,7 +421,7 @@ class AllOrdersResponseSchema(Schema):
 class ActiveOrdersResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    active_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+    active_orders = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -429,7 +430,7 @@ class ActiveOrdersResponseSchema(Schema):
 class PastOrdersResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    past_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+    past_orders = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -438,7 +439,7 @@ class PastOrdersResponseSchema(Schema):
 class CanceledOrdersResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    canceled_orders = fields.List(fields.Nested(OrdersResponse()), required=True)
+    canceled_orders = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -447,7 +448,7 @@ class CanceledOrdersResponseSchema(Schema):
 class AllDeliveriesResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    all_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+    all_deliveries = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -456,7 +457,7 @@ class AllDeliveriesResponseSchema(Schema):
 class ActiveDeliveriesResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    active_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+    active_deliveries = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -465,7 +466,7 @@ class ActiveDeliveriesResponseSchema(Schema):
 class PastDeliveriesResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    past_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+    past_deliveries = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -474,7 +475,7 @@ class PastDeliveriesResponseSchema(Schema):
 class CanceledDeliveriesResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
-    canceled_deliveries = fields.List(fields.Nested(OrdersResponse()), required=True)
+    canceled_deliveries = fields.List(fields.Nested(OrdersResponseSchema()), required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
