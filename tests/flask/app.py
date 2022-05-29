@@ -1030,9 +1030,10 @@ def all_orders(**kwargs):
 @doc(description="Endpoint for getting all active orders", tags=['Orders: All Roles'])
 def active_orders(**kwargs):
     return fetch_orders(
-        json.fetch_orders_input_json(session["user_id"], "customer", {"$ne": "delivered"}),
+        json.fetch_active_orders_input_json(session["user_id"], "customer"),
         "active",
-        "orders")
+        "orders"
+    )
 
 
 @app.route("/past_orders/", methods=['POST'])
@@ -1074,9 +1075,10 @@ def all_deliveries(**kwargs):
 @doc(description="Endpoint for getting all active deliveries", tags=['Orders: All Roles'])
 def active_deliveries(**kwargs):
     return fetch_orders(
-        json.fetch_orders_input_json(session["user_id"], "deliverer", {"$ne": "delivered"}),
+        json.fetch_active_orders_input_json(session["user_id"], "deliverer"),
         "active",
-        "deliveries")
+        "deliveries"
+    )
 
 
 @app.route("/past_deliveries/", methods=['POST'])

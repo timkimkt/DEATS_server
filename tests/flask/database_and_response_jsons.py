@@ -2,7 +2,6 @@
 import time
 from datetime import datetime
 
-
 FREE_DEATS_TOKENS = 3
 
 
@@ -134,6 +133,20 @@ def fetch_orders_input_json(user_id, role, order_status=None):
 
     return {
         f"{role}.user_id": user_id
+    }
+
+
+def fetch_active_orders_input_json(user_id, role):
+    return {
+        "$and": [
+            {f"{role}.user_id": user_id},
+            {
+                "$and": [
+                    {"order_status": {"$ne": "delivered"}},
+                    {"order_status": {"$ne": "canceled"}}
+                ]
+            }
+        ]
     }
 
 
