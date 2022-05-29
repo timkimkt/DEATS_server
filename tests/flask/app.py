@@ -31,6 +31,8 @@ g_count = 0
 # Secret key for cryptographically signing session cookies (Value is in bytes)
 app.secret_key = getenv("SECRET_KEY")
 STRIPE_WEBHOOK_SIG = getenv("STRIPE_WEBHOOK_SIG")
+NON_IDEMPOTENT_MODE = getenv("NON_IDEMPOTENT_MODE")
+FETCH_EXISTING = not (NON_IDEMPOTENT_MODE and NON_IDEMPOTENT_MODE.lower() == "on")
 
 "Load configuration"
 SESSION_TYPE = "redis"
@@ -269,7 +271,10 @@ def sso_login():
     net_id_email = attributes.get("netid") + "@dartmouth.edu"
 
     if user:
-        result_find = db.users.find_one({"user_info.email": net_id_email})
+        result_find = None
+
+        if FETCH_EXISTING:
+            result_find = db.users.find_one({"user_info.email": net_id_email})
 
         if result_find:
             print("This user is already in the system. Fetching details...")

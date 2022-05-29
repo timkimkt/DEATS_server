@@ -2,7 +2,7 @@ from os import getenv
 from marshmallow import Schema, fields, EXCLUDE, RAISE, INCLUDE
 
 # Set at global level since the server is restarted whenever the EXCLUDE_UNKNOWN configuration value changes
-UNKNOWN_VALUE = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes".lower() == "yes" else RAISE
+UNKNOWN_VALUE = EXCLUDE if getenv("EXCLUDE_UNKNOWN").lower() == "yes" else RAISE
 print("Unknown field behavior:", UNKNOWN_VALUE)
 
 
