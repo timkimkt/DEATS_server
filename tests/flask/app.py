@@ -436,6 +436,19 @@ def compute_order_fee(**kwargs):
     return json.order_fee_response_json(True, msg, order_fee)
 
 
+@app.route("/new_order_fee/", methods=['POST'])
+@use_kwargs(NewOrderFeeSchema())
+@marshal_with(NewOrderFeeResponseSchema, code=200, description="Response json")
+@doc(description="Endpoint for asking for the new fee for an updated order. Doesn't require a login",
+     tags=["Orders: All Roles"])
+def compute_new_order_fee(**kwargs):
+    new_order_fee = compute_new_fee(kwargs["new_pickup_loc"], kwargs["new_drop_loc"],
+                                    kwargs["old_pickup_loc"], kwargs["old_drop_loc"], kwargs["old_order_fee"])
+
+    msg = "Here's the new cost for this order"
+    return json.order_fee_response_json(True, msg, new_order_fee, "new_order_fee")
+
+
 @app.route("/order_del/", methods=['POST'])
 @use_kwargs(OrderDelSchema())
 @marshal_with(OrderDelResponseSchema, code=200, description="Response json")

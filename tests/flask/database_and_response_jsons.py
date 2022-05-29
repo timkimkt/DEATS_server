@@ -248,11 +248,11 @@ def login_request_response_json():
     }
 
 
-def order_fee_response_json(succeeded, msg, order_fee):
+def order_fee_response_json(succeeded, msg, order_fee, order_fee_key="order_fee"):
     return {
         "succeeded": succeeded,
         "msg": msg,
-        "order_fee": order_fee
+        order_fee_key: order_fee
     }
 
 

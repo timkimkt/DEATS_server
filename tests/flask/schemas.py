@@ -105,6 +105,17 @@ class OrderFeeSchema(Schema):
         unknown = UNKNOWN_VALUE
 
 
+class NewOrderFeeSchema(Schema):
+    new_pickup_loc = fields.Nested(LocationSchema(), required=True)
+    new_drop_loc = fields.Nested(LocationSchema(), required=True)
+    old_pickup_loc = fields.Nested(LocationSchema(), required=True)
+    old_drop_loc = fields.Nested(LocationSchema(), required=True)
+    old_order_fee = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
 class OrderDelInfoSchema(Schema):
     pickup_loc = fields.Nested(LocationSchema(), required=True)
     drop_loc = fields.Nested(LocationSchema(), required=True)
@@ -292,6 +303,15 @@ class OrderFeeResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
     order_fee = fields.Float(required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class NewOrderFeeResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    new_order_fee = fields.Float(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
