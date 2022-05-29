@@ -131,7 +131,7 @@ def fetch_orders_input_json(user_id, role, order_status=None):
             ]
         }
 
-    return {
+    return {  # for backward
         f"{role}.user_id": user_id
     }
 
@@ -141,7 +141,7 @@ def fetch_active_orders_input_json(user_id, role):
         "$and": [
             {f"{role}.user_id": user_id},
             {
-                "$and": [
+                "$and": [   # active orders not delivered or canceled
                     {"order_status": {"$ne": "delivered"}},
                     {"order_status": {"$ne": "canceled"}}
                 ]

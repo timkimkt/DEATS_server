@@ -664,7 +664,8 @@ def update_order_status(**kwargs):
         return json.success_response_json(False, msg)
 
     # Ensure the user making the update is the deliverer
-    if order["deliverer"]["user_id"] != session["user_id"]:
+    deliverer = order.get("deliverer")
+    if not deliverer or (deliverer and deliverer["user_id"] != session["user_id"]):
         msg = "The request was unsuccessful. You're not the deliverer for this order"
         return json.success_response_json(False, msg)
 
