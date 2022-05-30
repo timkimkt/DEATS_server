@@ -1256,10 +1256,21 @@ def stripe_webhook_updates():
                             succeeded = 1
                             updated_payload[key] = value
 
+                old_order_fee = existing_order["order_fee"]
+                new_order_fee = pay_tokens + old_order_fee
                 if succeeded:
                     msg = "The user's order has been updated"
 
                     db.orders.update_one({"_id": ObjectId(order_id)}, {"$inc": {"order_fee": pay_tokens}})
+
+                    socketio.emit("stripe:update_order_wc:cus",  # update_order_wc = update_order_with_card
+                                  json.order_delivery_loc_update_response_json(
+                                      bool(succeeded),
+                                      msg,
+                                      curr_tokens,
+                                      new_order_fee,
+                                      old_order_fee),
+                                  to=payment_intent.id)  # emit the updated order response to the order creator
 
                     # tell the deliverer the updates if there is one
                     if existing_order["deliverer"]:
@@ -1276,9 +1287,8 @@ def stripe_webhook_updates():
                 else:
                     msg = "The request wasn't successful. No new info was provided"
 
-                old_order_fee = existing_order["order_fee"]
                 return json.order_delivery_loc_update_response_json(bool(succeeded), msg, curr_tokens,
-                                                                    pay_tokens + old_order_fee, old_order_fee)
+                                                                    new_order_fee, old_order_fee)
 
             else:  # No order id attached; implies order creation
                 # If the customer passed in new user info to be used at the time of creating the order, use that instead
@@ -1296,7 +1306,7 @@ def stripe_webhook_updates():
                 if order_id:
                     msg = "The order request has been created successfully"
                     order_id = str(order_id)
-                    socketio.emit("stripe:order_with_card:cus",
+                    socketio.emit("stripe:order_wc:cus",  # order_wc = order_with_card
                                   json.order_delivery_response_json(
                                       bool(order_id),
                                       msg,
