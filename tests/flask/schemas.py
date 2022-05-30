@@ -292,8 +292,8 @@ class DEATSTokensSchema(Schema):
 
 
 class OrderResponseSchema(Schema):
-    order_id = fields.Str(required=True)
-    order_fee = fields.Float(required=True)
+    new_order_fee = fields.Float(required=True)
+    old_order_fee = fields.Float(required=True)
 
     class Meta:
         unknown = UNKNOWN_VALUE
@@ -318,6 +318,16 @@ class NewOrderFeeResponseSchema(Schema):
 
 
 class OrderDelResponseSchema(Schema):
+    succeeded = fields.Int(required=True)
+    msg = fields.Str(required=True)
+    user = fields.Nested(DEATSTokensSchema(), required=True)
+    order = fields.Nested(OrderResponseSchema(), required=True)
+
+    class Meta:
+        unknown = UNKNOWN_VALUE
+
+
+class OrderUpdateResponseSchema(Schema):
     succeeded = fields.Int(required=True)
     msg = fields.Str(required=True)
     user = fields.Nested(DEATSTokensSchema(), required=True)

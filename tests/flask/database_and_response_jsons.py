@@ -275,7 +275,7 @@ def order_delivery_loc_update_response_json(succeeded, msg, DEATS_tokens, new_or
         "succeeded": succeeded,
         "msg": msg,
         "user": {
-            "available_DEATS_tokens": DEATS_tokens
+            "DEATS_tokens": DEATS_tokens
         },
         "order": {
             "new_order_fee": new_order_fee,

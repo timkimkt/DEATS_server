@@ -541,7 +541,7 @@ def order_delivery_with_card(**kwargs):
 
 @app.route("/update_order/", methods=['POST'])
 @use_kwargs(UpdateOrderSchema())
-@marshal_with(SuccessResponseSchema, code=200, description="Response json")
+@marshal_with(OrderUpdateResponseSchema, code=200, description="Response json")
 @doc(description="Endpoint for updating an existing order. To be called only by customers",
      tags=['Orders: Customer Role Only'])
 def update_order(**kwargs):
