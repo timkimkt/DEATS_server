@@ -545,46 +545,10 @@ def order_delivery_with_card(**kwargs):
 @doc(description="Endpoint for updating an existing order. To be called only by customers",
      tags=['Orders: Customer Role Only'])
 def update_order(**kwargs):
-    login_failed = user_is_logged_in()
-    if login_failed:
-        return login_failed
-
-    status_check_failed = acc_is_active()
-    if status_check_failed:
-        return status_check_failed
-
-    # Ensure the order exists
     order_id = kwargs["order"]["order_id"]
-    order = db.orders.find_one({"_id": ObjectId(order_id)})
-    if not order:
-        msg = "The order with id, " + order_id + ", doesn't exist"
-        return json.success_response_json(False, msg)
+    new_order_fee, order = update_order_helper(kwargs)
 
-    # Ensure the order is not canceled
-    if order["order_status"] == "canceled":
-        msg = "The request was unsuccessful. The order was canceled"
-        return json.success_response_json(False, msg)
-
-    # Ensure the user making the update is the customer
-    if order["customer"]["user_id"] != session["user_id"]:
-        msg = "The request was unsuccessful. You're not the deliverer for this order"
-        return json.success_response_json(False, msg)
-
-    # Make sure the customer has enough DEATS tokens to do a location update
-    old_pickup_loc = order["pickup_loc"]
-    old_drop_loc = order["drop_loc"]
     old_order_fee = order["order_fee"]
-
-    # Use the provided pickup or (drop location) if there is one
-    # Doesn't matter if the location update will succeed or not
-    # i.e. if it will succeed, then it is exactly what we want to use in the new fee computation
-    # If not, then that means it is the same as what is already on the order, and we can just use that
-    new_pickup_loc = kwargs["order"]["pickup_loc"] if kwargs.get("order").get("pickup_loc") else old_pickup_loc
-    new_drop_loc = kwargs["order"]["drop_loc"] if kwargs.get("order").get("drop_loc") else old_drop_loc
-
-    new_order_fee = compute_new_fee(new_pickup_loc, new_drop_loc,
-                                    old_pickup_loc, old_drop_loc, old_order_fee)
-    print("new order fee:", new_order_fee)
 
     customer = db.users.find_one({"_id": ObjectId(session["user_id"])},
                                  {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
@@ -641,6 +605,62 @@ def update_order(**kwargs):
 
     return json.order_delivery_loc_update_response_json(bool(succeeded), msg,
                                                         remaining_tokens, new_order_fee, old_order_fee)
+
+
+@app.route("/update_order_with_card/", methods=['POST'])
+@use_kwargs(UpdateOrderSchema())
+@doc(description="Endpoint for updating an order with card payment", tags=["Orders: Customer Role Only"])
+def update_order_with_card(**kwargs):
+    new_order_fee, existing_order = update_order_helper(kwargs)
+
+    extra_fee = new_order_fee - existing_order["order_fee"]
+    if extra_fee > 0:
+        return create_payment_sheet_details(
+            extra_fee, json.create_payment_details_order_json(kwargs["order"], kwargs.get("user_info")))
+
+
+def update_order_helper(kwargs):
+    login_failed = user_is_logged_in()
+    if login_failed:
+        return login_failed
+
+    status_check_failed = acc_is_active()
+    if status_check_failed:
+        return status_check_failed
+
+    order_id = kwargs["order"]["order_id"]
+
+    # Ensure the order exists
+    order = db.orders.find_one({"_id": ObjectId(order_id)})
+    if not order:
+        msg = "The order with id, " + order_id + ", doesn't exist"
+        return json.success_response_json(False, msg)
+
+    # Ensure the order is not canceled
+    if order["order_status"] == "canceled":
+        msg = "The request was unsuccessful. The order was canceled"
+        return json.success_response_json(False, msg)
+
+    # Ensure the user making the update is the customer
+    if order["customer"]["user_id"] != session["user_id"]:
+        msg = "The request was unsuccessful. You're not the deliverer for this order"
+        return json.success_response_json(False, msg)
+
+    # Make sure the customer has enough DEATS tokens to do a location update
+    old_pickup_loc = order["pickup_loc"]
+    old_drop_loc = order["drop_loc"]
+
+    # Use the provided pickup or (drop location) if there is one
+    # Doesn't matter if the location update will succeed or not
+    # i.e. if it will succeed, then it is exactly what we want to use in the new fee computation
+    # If not, then that means it is the same as what is already on the order, and we can just use that
+    new_pickup_loc = kwargs["order"]["pickup_loc"] if kwargs.get("order").get("pickup_loc") else old_pickup_loc
+    new_drop_loc = kwargs["order"]["drop_loc"] if kwargs.get("order").get("drop_loc") else old_drop_loc
+
+    new_order_fee = compute_new_fee(new_pickup_loc, new_drop_loc,
+                                    old_pickup_loc, old_drop_loc, order["order_fee"])
+    print("new order fee:", new_order_fee)
+    return new_order_fee, order
 
 
 @app.route("/update_order_status/", methods=['POST'])
@@ -1210,51 +1230,92 @@ def stripe_webhook_updates():
         print("Succeeded payment intent: ", payment_intent)
 
         payment = db.payments.find_one({"_id": payment_intent.id})
-        pay_tokens = payment["tokens"]
+        pay_tokens = payment["tokens"]  # tokens paid by the customer
 
         # Get the customer info from the db
-        customer = db.users.find_one({"_id": ObjectId(payment["user_id"])},
-                                     {"user_info": 1, "DEATS_tokens": 1, "_id": 0})
-
+        customer = db.users.find_one({"_id": ObjectId(payment["user_id"])}, {"DEATS_tokens": 1, "_id": 0})
         curr_tokens = customer.pop("DEATS_tokens")
 
-        order = payment["pay_order"]
-        if order:
-            # If the customer passed in new user info to be used at the time of creating the order, use that instead
-            if order.get("user_info"):
-                for key, value in order["user_info"].items():
-                    customer["user_info"][f"{key}"] = value
+        pay_order = payment["pay_order"]
+        if pay_order:  # The payment has an order attached to it (implies order creation or update)
+            order_id = pay_order["order"].get("order_id")
+            print(order_id)
 
-            customer["user_id"] = payment["user_id"]
+            if order_id:  # The payment has an order id attached to it (implies order update)
+                succeeded = 0
+                updated_payload = {}  # payload to push to the room for the order
 
-            order_id = db.orders.insert_one(
-                json.order_delivery_json(customer,
-                                         order["order"]["pickup_loc"], order["order"]["drop_loc"],
-                                         order["order"]["GET_code"], pay_tokens)).inserted_id
+                # Get the existing order before any updates
+                existing_order = db.orders.find_one({"_id": ObjectId(order_id)})
+                for key, value in pay_order["order"].items():
+                    if key != "order_id":
+                        print("key: ", key, " value: ", value)
+                        result = db.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {key: value}})
 
-            if order_id:
-                msg = "The order request has been created successfully"
+                        if result.modified_count:
+                            succeeded = 1
+                            updated_payload[key] = value
+
+                if succeeded:
+                    msg = "The user's order has been updated"
+
+                    db.orders.update_one({"_id": ObjectId(order_id)}, {"$inc": {"order_fee": pay_tokens}})
+
+                    # tell the deliverer the updates if there is one
+                    if existing_order["deliverer"]:
+                        socketio.emit("cus:update:del", updated_payload, to=order_id)
+
+                    else:
+                        # announce to all connected clients that an existing order has been updated
+                        # clients are expected to call make_del to get the fresh update upon receiving this event
+                        # skip if the only key updated is the GET_code
+                        # GET_code is only relevant at the time of delivery
+                        if len(updated_payload) > 1 or "GET_code" not in updated_payload:
+                            socketio.emit("cus:update:all", order_id)
+
+                else:
+                    msg = "The request wasn't successful. No new info was provided"
+
+                old_order_fee = existing_order["order_fee"]
+                return json.order_delivery_loc_update_response_json(bool(succeeded), msg, curr_tokens,
+                                                                    pay_tokens + old_order_fee, old_order_fee)
+
+            else:  # No order id attached; implies order creation
+                # If the customer passed in new user info to be used at the time of creating the order, use that instead
+                if pay_order.get("user_info"):
+                    for key, value in pay_order["user_info"].items():
+                        customer["user_info"][f"{key}"] = value
+
+                customer["user_id"] = payment["user_id"]
+
+                order_id = db.orders.insert_one(
+                    json.order_delivery_json(customer,
+                                             pay_order["order"]["pickup_loc"], pay_order["order"]["drop_loc"],
+                                             pay_order["order"]["GET_code"], pay_tokens)).inserted_id
+
+                if order_id:
+                    msg = "The order request has been created successfully"
+                    order_id = str(order_id)
+                    socketio.emit("stripe:order_with_card:cus",
+                                  json.order_delivery_response_json(
+                                      bool(order_id),
+                                      msg,
+                                      curr_tokens,
+                                      pay_tokens,
+                                      order_id),
+                                  to=payment_intent.id)  # emit the order details to the initiator of this order
+
+                    socketio.emit("cus:new:all",
+                                  order_id)  # announce to all connected clients that a new order's been created
+
+                else:
+                    msg = "The request data looks good but the order wasn't created. Try again"
+
                 order_id = str(order_id)
-                socketio.emit("stripe:order_with_card:cus",
-                              json.order_delivery_response_json(
-                                  bool(order_id),
-                                  msg,
-                                  curr_tokens,
-                                  pay_tokens,
-                                  order_id),
-                              to=payment_intent.id)  # emit the order details to the initiator of this order
 
-                socketio.emit("cus:new:all",
-                              order_id)  # announce to all connected clients that a new order's been created
+                return json.order_delivery_response_json(bool(order_id), msg, None, pay_tokens, order_id)
 
-            else:
-                msg = "The request data looks good but the order wasn't created. Try again"
-
-            order_id = str(order_id)
-
-            return json.order_delivery_response_json(bool(order_id), msg, None, pay_tokens, order_id)
-
-        else:
+        else:  # No order attached implies buy DEATS tokens
             succeeded = True
             msg = "Your DEATS_tokens has been updated"
             rem_tokens = curr_tokens + pay_tokens
