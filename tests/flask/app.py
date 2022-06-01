@@ -590,7 +590,7 @@ def update_order(**kwargs):
 
         # tell the deliverer the updates if there is one
         if order["deliverer"]:
-            socketio.emit("cus:update:del", updated_payload, to=order_id)
+            socketio.emit("cus:update:del", updated_payload, to=order_id, include_self=False)
 
         else:
             # announce to all connected clients that an existing order has been updated
@@ -708,7 +708,7 @@ def update_order_status(**kwargs):
     result = None
     if succeeded:
         msg = "The user's order status has been updated"
-        socketio.emit("del:order_status:cus", order_status, to=order_id)
+        socketio.emit("del:order_status:cus", order_status, to=order_id, include_self=False)
 
         # Pay the deliverer after they've delivered the order
         if order_status == "delivered":
@@ -1001,7 +1001,7 @@ def cancel_order(**kwargs):
 
     if result.modified_count:  # Check for order cancellation
         if order["deliverer"]:
-            socketio.emit("cus:cancel:del", {"reason": kwargs["reason"]}, to=order_id)
+            socketio.emit("cus:cancel:del", {"reason": kwargs["reason"]}, to=order_id, include_self=False)
 
         else:
             # announce to all connected clients that an order has been canceled and is now available
@@ -1270,11 +1270,12 @@ def stripe_webhook_updates():
                                       curr_tokens,
                                       new_order_fee,
                                       old_order_fee),
-                                  to=payment_intent.id)  # emit the updated order response to the order creator
+                                  to=payment_intent.id,
+                                  include_self=False)  # emit the updated order response to the order creator
 
                     # tell the deliverer the updates if there is one
                     if existing_order["deliverer"]:
-                        socketio.emit("cus:update:del", updated_payload, to=order_id)
+                        socketio.emit("cus:update:del", updated_payload, to=order_id, include_self=False)
 
                     else:
                         # announce to all connected clients that an existing order has been updated
@@ -1313,7 +1314,8 @@ def stripe_webhook_updates():
                                       curr_tokens,
                                       pay_tokens,
                                       order_id),
-                                  to=payment_intent.id)  # emit the order details to the initiator of this order
+                                  to=payment_intent.id,
+                                  include_self=False)  # emit the order details to the initiator of this order
 
                     socketio.emit("cus:new:all",
                                   order_id)  # announce to all connected clients that a new order's been created
@@ -1339,7 +1341,7 @@ def stripe_webhook_updates():
 
             socketio.emit("stripe:buy_tokens:cus",
                           json.buy_DEATS_tokens_response_json(succeeded, msg, rem_tokens),
-                          to=payment_intent.id)  # emit the order details to the initiator of this order
+                          to=payment_intent.id, include_self=False)  # emit the order details to the initiator of this order
 
             return json.buy_DEATS_tokens_response_json(succeeded, msg)
 
@@ -1375,10 +1377,10 @@ def join_order_room(data):
 
     order = db.orders.find_one({"_id": (ObjectId(order_id))})
     if order.get("deliverer") and order.get("deliverer")["user_id"] == user_id:
-        emit("del:match:cus", {"order_id": order_id, "deliverer": order["deliverer"]}, to=order_id)
+        emit("del:match:cus", {"order_id": order_id, "deliverer": order["deliverer"]}, to=order_id, include_self=False)
 
     else:
-        send("The user " + user_id + " has started a new order room: " + order_id, to=order_id)
+        send("The user " + user_id + " has started a new order room: " + order_id, to=order_id, include_self=False)
 
     msg = "The user has been successfully added to the order room " + order_id
     return json.success_response_json(True, msg)
@@ -1395,7 +1397,8 @@ def join_payment_room(data):
 
     # add the user to a room based on the order_id passed
     join_room(payment_intent_id)
-    send("The user " + user_id + " has started a new payment room: " + payment_intent_id, to=payment_intent_id)
+    send("The user " + user_id + " has started a new payment room: " + payment_intent_id,
+         to=payment_intent_id, include_self=False)
 
     msg = "The user has been successfully added to the payment room " + payment_intent_id
     return json.success_response_json(True, msg)
